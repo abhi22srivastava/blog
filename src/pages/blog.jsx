@@ -10,6 +10,7 @@ function Blog() {
   const blogsPerPage = 6;
 
   useEffect(() => {
+    
     fetch("https://jsonplaceholder.typicode.com/posts")
       .then((res) => res.json())
       .then((data) => setBlogs(data))
@@ -20,7 +21,7 @@ function Blog() {
   const lastIndex = currentPage * blogsPerPage;
   const firstIndex = lastIndex - blogsPerPage;
   const currentBlogs = blogs.slice(firstIndex, lastIndex);
-
+console.log(currentBlogs);
   const totalPages = Math.ceil(blogs.length / blogsPerPage);
 
   return (

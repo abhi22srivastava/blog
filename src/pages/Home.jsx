@@ -28,7 +28,7 @@ function Home() {
       <section className="bg-blue-600 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold">
-            Welcome to Our Blog Home
+            Welcome to Our Blog 
           </h1>
           <p className="mt-4 text-lg">
             Read the latest articles and updates.
