@@ -17,11 +17,12 @@ function BlogDetails() {
         setLoading(true);
 
         const response = await fetch(
-          `https://jsonplaceholder.typicode.com/posts/${id}`
+          `http://127.0.0.1:8000/api/blog/${id}`
         );
 
-        const data = await response.json();
-        setBlog(data);
+        const details = await response.json();
+        console.log(details.data);
+        setBlog(details.data);
       } catch (error) {
         console.error(error);
       } finally {
@@ -53,7 +54,9 @@ function BlogDetails() {
   }
 
   return (
+    
     <>
+    
     <Header/>
     <section className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-4xl mx-auto px-4">
@@ -66,12 +69,7 @@ function BlogDetails() {
         </Link>
 
         <article className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <img
-            src={`https://picsum.photos/1200/500?random=${blog.id}`}
-            alt={blog.title}
-            className="w-full h-80 object-cover"
-          />
-
+       
           <div className="p-8">
             <h1 className="text-4xl font-bold mb-4">
               {blog.title}
@@ -81,9 +79,10 @@ function BlogDetails() {
               Blog ID: {blog.id}
             </div>
 
-            <p className="text-gray-700 leading-8">
-              {blog.body}
-            </p>
+           <div
+  className="prose max-w-none"
+  dangerouslySetInnerHTML={{ __html: blog.long_description }}
+/>
           </div>
         </article>
 

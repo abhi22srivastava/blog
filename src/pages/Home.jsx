@@ -12,12 +12,33 @@ import "swiper/css/pagination";
 function Home() {
   const [blogs, setBlogs] = useState([]);
 
+  // useEffect(() => {
+  //   fetch("https://jsonplaceholder.typicode.com/posts?_limit=10")
+  //     .then((res) => res.json())
+  //      .then((response) => {
+  //      console.log(response); 
+  //      setBlogs(response.data);
+  //    })
+  //     .catch((err) => console.log(err));
+  // }, []);
+
+ 
+
+  
+
   useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/posts?_limit=10")
+    fetch("http://127.0.0.1:8000/api/blog/")
       .then((res) => res.json())
-      .then((data) => setBlogs(data))
-      .catch((err) => console.log(err));
+      .then((response) => {
+        setBlogs(response.data);
+        // console.log(response.data);
+      })
+    .catch((err) => console.log(err));
   }, []);
+
+ 
+
+  
 
   return (
     <>
@@ -67,20 +88,19 @@ function Home() {
           {blogs.map((blog) => (
             <SwiperSlide key={blog.id}>
               <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                <img
-                  src={`https://picsum.photos/600/400?random=${blog.id}`}
-                  alt={blog.title}
-                  className="w-full h-52 object-cover"
-                />
-
+             
                 <div className="p-5">
                   <h3 className="text-xl font-semibold mb-3">
                     {blog.title}
                   </h3>
 
                   <p className="text-gray-600 mb-4 line-clamp-3">
-                    {blog.body}
+                    
+
+                     {blog.long_description.replace(/<\/?[^>]+(>|$)/g, "")}
+                    {/* {blog.long_description} */}
                   </p>
+                 
 
                   <Link
                     to={`/blog/${blog.id}`}
