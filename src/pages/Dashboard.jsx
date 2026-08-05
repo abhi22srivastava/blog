@@ -1,137 +1,287 @@
 import Header from "../components/Header";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
+  Pencil,
+  Eye,
+  Trash2,
+} from "lucide-react";
 
 function Dashboard() {
-  const stats = [
-    { title: "Total Posts", count: 125, icon: "📝" },
-    { title: "Published Articles", count: 98, icon: "📚" },
-    { title: "Draft Posts", count: 18, icon: "📄" },
-    { title: "Total Views", count: "15.2K", icon: "👀" },
-  ];
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userid = user?.id;
+  const token = localStorage.getItem("token");
 
-  const articles = [
-    {
-      id: 1,
-      title: "Getting Started with React",
-      date: "20 June 2026",
-      status: "Published",
-    },
-    {
-      id: 2,
-      title: "Understanding React Hooks",
-      date: "18 June 2026",
-      status: "Published",
-    },
-    {
-      id: 3,
-      title: "Tailwind CSS Complete Guide",
-      date: "15 June 2026",
-      status: "Draft",
-    },
-  ];
+  const [articles, setArticles] = useState([]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/article/${userid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setArticles(data.data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const totalPosts = articles.length;
+  const published = articles.filter(
+    (a) => a.status === "Published"
+  ).length;
+  const drafts = articles.filter(
+    (a) => a.status !== "Published"
+  ).length;
 
   return (
     <>
       <Header />
 
-      <div className="min-h-screen bg-gray-100 p-6">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-8 shadow-lg">
-          <h1 className="text-4xl font-bold">Welcome Back 👋</h1>
-          <p className="mt-2 text-lg opacity-90">
-            Manage your posts, articles, and content from one place.
-          </p>
-        </div>
+      <div className="flex min-h-screen bg-gray-100">
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          {stats.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition duration-300"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-gray-500 text-sm">{item.title}</h3>
-                  <p className="text-3xl font-bold mt-2">{item.count}</p>
-                </div>
-                <span className="text-4xl">{item.icon}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Sidebar */}
 
-        {/* Recent Articles */}
-        <div className="bg-white rounded-xl shadow-md mt-8 p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bold">Recent Articles</h2>
+        <div className="w-64 bg-white shadow-lg">
 
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-              + Add Article
-            </button>
+          <div className="p-6 border-b">
+       
+        <img
+  src="http://127.0.0.1:8000/frontend/images/largeimg.jpg"
+  alt={user.name}
+  className="w-24 h-24 rounded-full object-cover border-4 border-white"
+/>
+
+      
+
+            <p className="text-gray-500">
+              {user.name}
+            </p>
+
           </div>
 
-          <div className="space-y-4">
-            {articles.map((article) => (
-              <div
-                key={article.id}
-                className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-50"
+          <ul className="mt-5">
+
+            <li>
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-3 p-4 hover:bg-blue-50"
               >
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {article.title}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {article.date}
-                  </p>
-                </div>
+                <LayoutDashboard size={20} />
+                Dashboard
+              </Link>
+            </li>
 
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    article.status === "Published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  {article.status}
-                </span>
-              </div>
-            ))}
-          </div>
+            <li>
+              <Link
+                to="/add-article"
+                className="flex items-center gap-3 p-4 hover:bg-blue-50"
+              >
+                <PlusCircle size={20} />
+                Add Article
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/my-articles"
+                className="flex items-center gap-3 p-4 hover:bg-blue-50"
+              >
+                <FileText size={20} />
+                My Articles
+              </Link>
+            </li>
+
+          </ul>
+
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <h3 className="text-xl font-semibold">Create Post</h3>
-            <p className="text-gray-500 mt-2">
-              Start writing a new blog post.
-            </p>
-            <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg">
-              New Post
-            </button>
+        {/* Main */}
+
+        <div className="flex-1 p-8">
+
+          {/* Welcome */}
+
+       
+
+          {/* Stats */}
+
+          <div className="grid md:grid-cols-3 gap-5 mt-8">
+
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3>Total Posts</h3>
+              <h2 className="text-3xl font-bold">
+                {totalPosts}
+              </h2>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3>Published</h3>
+              <h2 className="text-3xl font-bold text-green-600">
+                {published}
+              </h2>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3>Draft</h3>
+              <h2 className="text-3xl font-bold text-yellow-600">
+                {drafts}
+              </h2>
+            </div>
+
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <h3 className="text-xl font-semibold">Manage Articles</h3>
-            <p className="text-gray-500 mt-2">
-              Edit and organize your content.
-            </p>
-            <button className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg">
-              View Articles
-            </button>
+          {/* Recent Articles */}
+
+          <div className="bg-white rounded-xl shadow mt-8">
+
+            <div className="flex justify-between items-center p-6 border-b">
+
+              <h2 className="text-2xl font-bold">
+                Recent Articles
+              </h2>
+
+              <Link
+                to="/add-article"
+                className="bg-blue-600 text-white px-5 py-2 rounded"
+              >
+                Add Article
+              </Link>
+
+            </div>
+
+            <table className="w-full">
+
+              <thead className="bg-gray-50">
+
+                <tr>
+
+                  <th className="p-4 text-left">
+                    Title
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Date
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Status
+                  </th>
+
+                  <th className="p-4 text-center">
+                    Actions
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {articles.length > 0 ? (
+                  articles.map((article) => (
+                    <tr
+                      key={article.id}
+                      className="border-b hover:bg-gray-50"
+                    >
+                      <td className="p-4">
+                        {article.title}
+                      </td>
+
+                      <td className="p-4">
+                        {article.created_at}
+                      </td>
+
+                      <td className="p-4">
+
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm ${
+                            article.status === "Published"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {article.status}
+                        </span>
+
+                      </td>
+
+                      <td className="p-4">
+
+                        <div className="flex justify-center gap-3">
+
+                          <Link
+                            to={`/blog/${article.id}`}
+                            className="text-blue-600"
+                          >
+                            <Eye size={18} />
+                          </Link>
+
+                          <Link
+                            to={`/edit-article/${article.id}`}
+                            className="text-indigo-600"
+                          >
+                            <Pencil size={18} />
+                          </Link>
+
+                          <button
+                            className="text-green-600"
+                          >
+                            Publish
+                          </button>
+
+                          <button
+                            className="text-red-600"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+
+                    <td
+                      colSpan="4"
+                      className="text-center p-8"
+                    >
+                      No Articles Found
+                    </td>
+
+                  </tr>
+                )}
+
+              </tbody>
+
+            </table>
+
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <h3 className="text-xl font-semibold">Analytics</h3>
-            <p className="text-gray-500 mt-2">
-              Check post performance and views.
-            </p>
-            <button className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg">
-              View Stats
-            </button>
-          </div>
         </div>
+
       </div>
+
     </>
   );
 }

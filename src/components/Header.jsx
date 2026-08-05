@@ -1,143 +1,105 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth";
+import { Search } from "lucide-react";
 
 function Header() {
   const isLoggedIn = localStorage.getItem("token");
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+
+    if (search.trim()) {
+      navigate(`/search?q=${encodeURIComponent(search)}`);
+      setSearch("");
+    }
+  };
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+    <header className="bg-white shadow sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-5">
+
         {/* Logo */}
-        <h1 className="text-2xl font-bold text-blue-600">
-          <Link to="/">MyBlog</Link>
+        <h1 className="text-3xl font-bold text-blue-600">
+          BlogSphere
         </h1>
 
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-6">
-          <li>
-            <Link to="/" className="hover:text-blue-600">
-              Home
-            </Link>
-          </li>
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center space-x-8">
 
-          <li>
-            <Link to="/about" className="hover:text-blue-600">
-              About
-            </Link>
-          </li>
+          <Link to="/" className="hover:text-blue-600">
+            Home
+          </Link>
 
-          <li>
-            <Link to="/blog" className="hover:text-blue-600">
-              Blog
-            </Link>
-          </li>
+          <Link
+            to="/about"
+            onClick={() => setIsOpen(false)}
+            className="hover:text-blue-600"
+          >
+            About
+          </Link>
 
-          <li>
-            <Link to="/contact" className="hover:text-blue-600">
-              Contact
-            </Link>
-          </li>
+          <Link
+            to="/blog"
+            onClick={() => setIsOpen(false)}
+            className="hover:text-blue-600"
+          >
+            Blog
+          </Link>
 
-          {isLoggedIn ? (
-            <li>
-              <button
-                onClick={logout}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-              >
-                Logout
-              </button>
-            </li>
-          ) : (
-            <li>
-              <Link
-                to="/login"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Login
-              </Link>
-            </li>
-          )}
-        </ul>
+          <Link
+            to="/contact"
+            onClick={() => setIsOpen(false)}
+            className="hover:text-blue-600"
+          >
+            Contact
+          </Link>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-2xl"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? "✖" : "☰"}
-        </button>
+        </nav>
+
+        {/* Search */}
+        <form
+  onSubmit={handleSearch}
+  className="hidden lg:flex items-center bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm"
+>
+  <input
+    type="text"
+    placeholder="Search articles..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="bg-transparent px-5 py-2 w-64 outline-none"
+  />
+
+  <button
+    type="submit"
+    className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full m-1 transition duration-300"
+  >
+    <Search size={18} />
+  </button>
+</form>
+
+        {/* Login / Logout */}
+        {isLoggedIn ? (
+          <button
+            className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+            onClick={logout}
+          >
+            Logout
+          </button>
+        ) : (
+          <Link to="/login">
+            <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
+              Login
+            </button>
+          </Link>
+        )}
+
       </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t">
-          <ul className="flex flex-col p-4 space-y-4">
-            <li>
-              <Link
-                to="/"
-                onClick={() => setIsOpen(false)}
-                className="block hover:text-blue-600"
-              >
-                Home
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                to="/about"
-                onClick={() => setIsOpen(false)}
-                className="block hover:text-blue-600"
-              >
-                About
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                to="/blog"
-                onClick={() => setIsOpen(false)}
-                className="block hover:text-blue-600"
-              >
-                Blog
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                to="/contact"
-                onClick={() => setIsOpen(false)}
-                className="block hover:text-blue-600"
-              >
-                Contact
-              </Link>
-            </li>
-
-            {isLoggedIn ? (
-              <li>
-                <button
-                  onClick={logout}
-                  className="w-full bg-red-500 text-white py-2 rounded-lg"
-                >
-                  Logout
-                </button>
-              </li>
-            ) : (
-              <li>
-                <Link
-                  to="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="block text-center bg-blue-600 text-white py-2 rounded-lg"
-                >
-                  Login
-                </Link>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-    </nav>
+    </header>
   );
 }
 

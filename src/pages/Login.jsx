@@ -6,52 +6,49 @@ import Footer from "../components/Footer";
 function Login() {
   const navigate = useNavigate();
 
-  const [username, setEmail] = useState("emilys");
-  const [password, setPassword] = useState("emilyspass");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-     const response = await fetch(
-      "https://dummyjson.com/auth/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      }
-    );
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-         
-
-        alert("Login Successful");
-
-        navigate("/dashboard");
-      } else {
-        setError(data.error || "Login Failed");
-      }
-    } 
-    
-    catch (err) {
-      setError("Network Error");
+    if (response.ok) {
+      
+      // Save token and user
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+        
+      navigate("/dashboard");
+    } else {
+      setError(data.message || "Invalid Email or Password");
     }
-
+  } catch (err) {
+    console.error(err);
+    setError("Network Error");
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   return (
     <>
@@ -79,7 +76,7 @@ function Login() {
             <input
               type="text"
               className="w-full border p-3 rounded-lg"
-              value={username}
+              value={email}
               onChange={(e) =>
                 setEmail(e.target.value)
               }
