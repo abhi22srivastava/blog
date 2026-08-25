@@ -1,6 +1,7 @@
 import Header from "../components/Header";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import Select from "react-select";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import {
@@ -13,25 +14,139 @@ import {
 } from "lucide-react";
 
 function AddArticle() {
-
-  const [topics, setTopics] = useState([]);
+  const API_URL = "http://127.0.0.1:8000";
+  const quillRef = useRef(null);
+  const [topicList, setTopicList] = useState([]);
+  const [selectedTopics, setSelectedTopics] = useState([]);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
-  const [status, setStatus] = useState("Draft");
+  const [status, setStatus] = useState("0");
+  const [isSaving, setIsSaving] = useState(false);
+  const [formMessage, setFormMessage] = useState("");
 
- const handleSubmit = (e) => {
+
+const handleTopicChange = (selectedOptions) => {
+    setSelectedTopics(
+        (selectedOptions || []).map((option) => ({
+            id: option.value,
+            name: option.label,
+        }))
+    );
+};
+
+
+const handleEditorChange = (value) => {
+    const quill = quillRef.current?.getEditor();
+
+    if (!quill) {
+        setContent(value);
+        return;
+    }
+
+    const selection = quill.getSelection();
+    const scrollTop = quill.root.scrollTop;
+
+    setContent(value);
+
+    // Restore editor position after React re-render
+    requestAnimationFrame(() => {
+        const editor = quillRef.current?.getEditor();
+
+        if (!editor) return;
+
+        if (selection) {
+            editor.setSelection(selection.index, selection.length, "silent");
+        }
+
+        editor.root.scrollTop = scrollTop;
+    });
+};
+
+
+
+ const handleSubmit = async (e) => {
   e.preventDefault();
 
-  console.log({
-    topics,
-    title,
-    slug,
-    status,
-    content,
-  });
+  if (!title.trim() || !content.trim()) {
+    setFormMessage("Please add an article title and content.");
+    return;
+  }
 
-  // Laravel API
+  setIsSaving(true);
+  setFormMessage("");
+
+  try {
+    const contentForDatabase = convertImagesForDatabase(content);
+    const response = await fetch("http://127.0.0.1:8000/api/article/savearticle", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: userid,
+        topics: selectedTopics,
+        title: title.trim(),
+        slug,
+        status,
+         content: contentForDatabase,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Unable to save the article.");
+    }
+
+    setFormMessage("Article saved successfully.");
+    setSelectedTopics([]);
+    setTitle("");
+    setSlug("");
+    setContent("");
+    setStatus("0");
+    
+  } catch (error) {
+    setFormMessage(error.message || "Unable to save the article.");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+const getImageUrl = (path) => {
+    if (!path) return "";
+
+    // Already a full URL
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+        return path;
+    }
+
+    // Remove leading slash
+    path = path.replace(/^\/+/, "");
+
+    // If Laravel returns article/image/...
+    if (path.startsWith("article/")) {
+        return `${API_URL}/storage/${path}`;
+    }
+
+    // If path already contains storage/
+    if (path.startsWith("storage/")) {
+        return `${API_URL}/${path}`;
+    }
+
+    return `${API_URL}/storage/${path}`;
+};
+
+
+const handleReset = () => {
+  setSelectedTopics([]);
+  setTitle("");
+  setSlug("");
+  setContent("");
+  setStatus("Draft");
+  setFormMessage("");
 };
 
 const handleTitleChange = (e) => {
@@ -47,48 +162,15 @@ const handleTitleChange = (e) => {
     );
   };
 
-  const topicList = [
-  "Technology",
-  "Business",
-  "Health",
-  "Education",
-  "Sports",
-  "Travel",
-  "Lifestyle",
-  "Finance",
-];
 
-const modules = {
-  toolbar: {
-    container: [
-      [{ header: [1, 2, 3, 4, false] }],
-      [{ font: [] }],
-      [{ size: ["small", false, "large", "huge"] }],
-
-      ["bold", "italic", "underline", "strike"],
-
-      [{ color: [] }, { background: [] }],
-
-      [{ script: "sub" }, { script: "super" }],
-
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ indent: "-1" }, { indent: "+1" }],
-
-      [{ align: [] }],
-
-      ["blockquote", "code-block"],
-
-      ["link", "image", "video"],
-
-      ["clean"],
-    ],
-   
-    handlers: {
-      image: imageHandler,
-      video: videoHandler,
-    },
-  },
-};
+/*
+ const topicList = [
+  { id: 1, name: "business" },
+  { id: 3, name: "Health" },
+  { id: 4, name: "Education" },
+  { id: 5, name: "Technology" },
+  
+]; */
 
 const videoHandler = () => {
   const url = prompt("Enter YouTube or Video URL");
@@ -102,48 +184,122 @@ const videoHandler = () => {
   quill.insertEmbed(range.index, "video", url);
 };
 
-const imageHandler = () => {
-  const input = document.createElement("input");
-  input.setAttribute("type", "file");
-  input.setAttribute("accept", "image/*");
-  input.click();
 
-  input.onchange = async () => {
-    const file = input.files[0];
 
-    const formData = new FormData();
-    formData.append("image", file);
+const convertImagesForEditor = (html) => {
+    if (!html) return "";
 
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/upload-image",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      }
+    return html.replace(
+        /src="(\/storage\/[^"]+)"/g,
+        `src="${API_URL}$1"`
     );
+};
 
-    const data = await response.json();
+const convertImagesForDatabase = (html) => {
+    if (!html) return "";
 
-    const quill = quillRef.current.getEditor();
-
-    const range = quill.getSelection(true);
-
-    quill.insertEmbed(range.index, "image", data.url);
-  };
+    return html.replace(
+        new RegExp(
+            `src="${API_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/storage/([^"]+)"`,
+            "g"
+        ),
+        'src="/storage/$1"'
+    );
 };
 
 
+const imageHandler = () => {
+    const input = document.createElement("input");
 
-const handleTopicChange = (e) => {
-  const values = Array.from(
-    e.target.selectedOptions,
-    (option) => option.value
-  );
-  setTopics(values);
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = async () => {
+        const file = input.files?.[0];
+
+        if (!file) return;
+
+        try {
+            const formData = new FormData();
+            formData.append("image", file);
+
+            const response = await fetch(
+                `${API_URL}/api/article/upload_images`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                    body: formData,
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to upload the image."
+                );
+            }
+
+            const imagePath = data.path;
+
+            if (!imagePath) {
+                throw new Error("Image path was not returned.");
+            }
+
+            // Full URL ONLY for Quill editor
+            const imageUrl = getImageUrl(imagePath);
+
+            const quill = quillRef.current.getEditor();
+            const range = quill.getSelection(true);
+
+            quill.insertEmbed(
+                range ? range.index : quill.getLength(),
+                "image",
+                imageUrl
+            );
+
+            quill.setSelection(
+                (range ? range.index : quill.getLength()) + 1
+            );
+
+        } catch (error) {
+            console.error(error);
+            setFormMessage(
+                error.message || "Unable to upload the image."
+            );
+        }
+    };
 };
+
+
+const modules = {
+  toolbar: {
+    container: [
+      [{ header: [1, 2, 3, 4, false] }],
+      [{ font: [] }],
+      [{ size: ["small", false, "large", "huge"] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ color: [] }, { background: [] }],
+      [{ script: "sub" }, { script: "super" }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+      [{ align: [] }],
+      ["blockquote", "code-block"],
+      ["link", "image", "video"],
+      ["clean"],
+    ],
+    handlers: {
+      image: imageHandler,
+      video: videoHandler,
+    },
+  },
+};
+
+
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userid = user?.id;
@@ -152,30 +308,37 @@ const handleTopicChange = (e) => {
   const [articles, setArticles] = useState([]);
 
   useEffect(() => {
-    fetchArticles();
+    fetchTopics();
   }, []);
 
-  const fetchArticles = async () => {
+
+  const fetchTopics = async () => {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/article/${userid}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+        const response = await fetch(
+            `${API_URL}/api/article/gettopicsList`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || "Unable to fetch topics."
+            );
         }
-      );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setArticles(data.data);
-      }
-    } catch (err) {
-      console.log(err);
+        setTopicList(data.data || []);
+        console.log("Fetched topics:", data.data);
+    } catch (error) {
+        console.error("Topics error:", error);
+        setFormMessage(error.message || "Unable to fetch topics.");
     }
-  };
+};
 
   const totalPosts = articles.length;
   const published = articles.filter(
@@ -265,27 +428,47 @@ const handleTopicChange = (e) => {
 
         <form onSubmit={handleSubmit} className="p-8">
 
+          {formMessage && (
+            <p className="mb-6 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              {formMessage}
+            </p>
+          )}
+
          {/* Topics */}
 <div className="mb-6">
   <label className="block font-semibold mb-2">
     Topics
   </label>
 
-  <select
-    multiple
-    value={topics}
+ 
+
+  <Select
+    isMulti
+    isSearchable
+    options={topicList.map((topic) => ({
+        value: topic.id,
+        label: topic.name,
+    }))}
+    value={selectedTopics.map((topic) => ({
+        value: topic.id,
+        label: topic.name,
+    }))}
     onChange={handleTopicChange}
-    className="w-full border rounded-lg px-4 py-3 h-40 focus:ring-2 focus:ring-blue-500"
-  >
-    {topicList.map((topic) => (
-      <option key={topic} value={topic}>
-        {topic}
-      </option>
-    ))}
-  </select>
+    placeholder="Select topics..."
+    noOptionsMessage={() => "No topics found"}
+/>
+
+
+
+
+
+
+
+
+
 
   <p className="text-sm text-gray-500 mt-2">
-    Hold Ctrl (Windows) or Cmd (Mac) to select multiple topics.
+    Select one or more topics. You can search by topic name.
   </p>
 </div>
 
@@ -329,38 +512,40 @@ const handleTopicChange = (e) => {
               onChange={(e) => setStatus(e.target.value)}
               className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="Draft">Draft</option>
-              <option value="Published">Published</option>
+              <option value="0">Un Published</option>
+              <option value="1">Published</option>
             </select>
           </div>
 
           {/* Content */}
           <div className="mb-8">
-            <label className="block font-semibold mb-2">
-              Content
-            </label>
-
-         <ReactQuill
-  ref={quillRef}
-  theme="snow"
-  value={content}
-  onChange={setContent}
-  modules={modules}
-  style={{ height: 400, marginBottom: 80 }}
-/>
+           <label className="block font-semibold mb-2">
+        Content
+    </label>
+      <div className="quill-wrapper">
+        <ReactQuill
+            ref={quillRef}
+            theme="snow"
+            value={content}
+            onChange={handleEditorChange}
+            modules={modules}
+        />
+    </div>
           </div>
 
           {/* Buttons */}
-          <div className="pt-16 flex gap-4">
+          <div className="pt-12 flex gap-2">
             <button
               type="submit"
+              disabled={isSaving}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
             >
-              Save Article
+              {isSaving ? "Saving..." : "Save Article"}
             </button>
 
             <button
-              type="reset"
+              type="button"
+              onClick={handleReset}
               className="bg-gray-300 hover:bg-gray-400 px-6 py-3 rounded-lg"
             >
               Reset

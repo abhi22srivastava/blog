@@ -29,3 +29,32 @@ color:#fff;
 .hero{
 background:linear-gradient(to right,#1e3a8a,#0f172a);
 }
+
+.ql-container {
+    height: 250px !important;
+}
+
+.ql-editor {
+    height: 250px !important;
+    overflow-y: auto !important;
+}
+
+.quill-wrapper {
+    height: 350px;
+}
+
+.quill-wrapper .ql-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+}
+
+.quill-wrapper .ql-container {
+    height: 300px !important;
+}
+
+.quill-wrapper .ql-editor {
+    height: 300px !important;
+    overflow-y: auto !important;
+}

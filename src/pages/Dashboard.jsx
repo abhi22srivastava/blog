@@ -205,9 +205,16 @@ function Dashboard() {
                         {article.title}
                       </td>
 
-                      <td className="p-4">
-                        {article.created_at}
-                      </td>
+                          <td className="p-4">
+                            {new Date(article.created_at).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
+                          </td>
 
                       <td className="p-4">
 

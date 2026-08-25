@@ -1,19 +1,19 @@
 function Footer(){
      return (
       <>
-      <footer class="bg-gray-900 text-gray-300 py-16">
+      <footer className="bg-gray-900 text-gray-300 py-16">
 
-<div class="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10">
+<div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10">
 
 <div>
 
-<h2 class="text-3xl font-bold text-white">
+<h2 className="text-3xl font-bold text-white">
 
 BlogSphere
 
 </h2>
 
-<p class="mt-5">
+<p className="mt-5">
 
 Discover inspiring stories from amazing writers.
 
@@ -23,13 +23,13 @@ Discover inspiring stories from amazing writers.
 
 <div>
 
-<h3 class="text-white font-bold mb-4">
+<h3 className="text-white font-bold mb-4">
 
 Company
 
 </h3>
 
-<ul class="space-y-3">
+<ul className="space-y-3">
 
 <li>About</li>
 
@@ -45,13 +45,13 @@ Company
 
 <div>
 
-<h3 class="text-white font-bold mb-4">
+<h3 className="text-white font-bold mb-4">
 
 Categories
 
 </h3>
 
-<ul class="space-y-3">
+<ul className="space-y-3">
 
 <li>Technology</li>
 
@@ -67,27 +67,27 @@ Categories
 
 <div>
 
-<h3 class="text-white font-bold mb-4">
+<h3 className="text-white font-bold mb-4">
 
 Follow Us
 
 </h3>
 
-<div class="flex gap-4">
+<div className="flex gap-4">
 
-<div class="w-10 h-10 bg-blue-600 rounded-full"></div>
+<div className="w-10 h-10 bg-blue-600 rounded-full"></div>
 
-<div class="w-10 h-10 bg-pink-600 rounded-full"></div>
+<div className="w-10 h-10 bg-pink-600 rounded-full"></div>
 
-<div class="w-10 h-10 bg-sky-500 rounded-full"></div>
-
-</div>
+<div className="w-10 h-10 bg-sky-500 rounded-full"></div>
 
 </div>
 
 </div>
 
-<div class="text-center mt-10 border-t border-gray-700 pt-8">
+</div>
+
+<div className="text-center mt-10 border-t border-gray-700 pt-8">
 
 © 2026 BlogSphere. All Rights Reserved.
 
