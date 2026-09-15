@@ -1,6 +1,6 @@
 import Header from "../components/Header";
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -8,13 +8,13 @@ import {
   LayoutDashboard,
   FileText,
   PlusCircle,
-  Pencil,
-  Eye,
-  Trash2,
 } from "lucide-react";
 
 function AddArticle() {
   const API_URL = "http://127.0.0.1:8000";
+  const { id: articleId } = useParams();
+  const navigate = useNavigate();
+  const isEditing = Boolean(articleId);
   const quillRef = useRef(null);
   const [topicList, setTopicList] = useState([]);
   const [selectedTopics, setSelectedTopics] = useState([]);
@@ -24,6 +24,7 @@ function AddArticle() {
   const [status, setStatus] = useState("0");
   const [isSaving, setIsSaving] = useState(false);
   const [formMessage, setFormMessage] = useState("");
+  const [isLoadingArticle, setIsLoadingArticle] = useState(isEditing);
 
 
 const handleTopicChange = (selectedOptions) => {
@@ -78,7 +79,12 @@ const handleEditorChange = (value) => {
 
   try {
     const contentForDatabase = convertImagesForDatabase(content);
-    const response = await fetch("http://127.0.0.1:8000/api/article/savearticle", {
+    const response = await fetch(
+      isEditing
+        ? `${API_URL}/api/article/updatearticle/${articleId}`
+        : `${API_URL}/api/article/savearticle`,
+      {
+      // The article API uses action endpoints (savearticle/updatearticle), so both save actions use POST.
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -93,7 +99,8 @@ const handleEditorChange = (value) => {
         status,
          content: contentForDatabase,
       }),
-    });
+      }
+    );
 
     const data = await response.json();
 
@@ -101,7 +108,15 @@ const handleEditorChange = (value) => {
       throw new Error(data.message || "Unable to save the article.");
     }
 
-    setFormMessage("Article saved successfully.");
+    setFormMessage(
+      isEditing ? "Article updated successfully." : "Article saved successfully."
+    );
+
+    if (isEditing) {
+      navigate("/dashboard");
+      return;
+    }
+
     setSelectedTopics([]);
     setTitle("");
     setSlug("");
@@ -145,7 +160,7 @@ const handleReset = () => {
   setTitle("");
   setSlug("");
   setContent("");
-  setStatus("Draft");
+  setStatus("0");
   setFormMessage("");
 };
 
@@ -305,14 +320,109 @@ const modules = {
   const userid = user?.id;
   const token = localStorage.getItem("token");
 
-  const [articles, setArticles] = useState([]);
-
   useEffect(() => {
-    fetchTopics();
-  }, []);
+    if (!isEditing || !articleId || !userid || !token) return;
+    if (topicList.length === 0) return;
+
+    const fetchArticle = async () => {
+        try {
+            setIsLoadingArticle(true);
+
+            const response = await fetch(
+                `${API_URL}/api/article/${userid}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to load the article."
+                );
+            }
+
+            const article = (data.data || []).find(
+                (item) => String(item.id) === String(articleId)
+            );
+
+            if (!article) {
+                setFormMessage("Article not found.");
+                return;
+            }
+
+            const articleTopics =
+                article.topics ??
+                article.article_topics ??
+                article.topic_list ??
+                article.topic_ids ??
+                article.topicid ??
+                article.topic_id ??
+                [];
+            const topicItems = Array.isArray(articleTopics)
+                ? articleTopics
+                : String(articleTopics).split(",");
+            const topicIds = topicItems
+                .map((item) =>
+                    typeof item === "object"
+                        ? item.topic_id ?? item.id ?? item.pivot?.topic_id
+                        : item
+                )
+                .filter((id) => id != null && String(id).trim() !== "");
+
+            // Use the exact option objects so react-select marks them as selected.
+            setSelectedTopics(
+                topicList.filter((topic) =>
+                    topicIds.some((id) => String(id) === String(topic.id))
+                )
+            );
+
+            setTitle(article.title || "");
+            setSlug(article.slug || "");
+
+            setContent(
+                convertImagesForEditor(
+                    article.content ||
+                    article.long_description ||
+                    ""
+                )
+            );
+
+            setStatus(
+                article.status === "Published" ||
+                article.status === 1 ||
+                article.status === "1"
+                    ? "1"
+                    : "0"
+            );
+
+        } catch (error) {
+            console.error("Edit article error:", error);
+
+            setFormMessage(
+                error.message || "Unable to load the article."
+            );
+        } finally {
+            setIsLoadingArticle(false);
+        }
+    };
+
+    fetchArticle();
+
+}, [
+    articleId,
+    isEditing,
+    token,
+    userid,
+    topicList
+]);
 
 
-  const fetchTopics = async () => {
+  async function fetchTopics() {
     try {
         const response = await fetch(
             `${API_URL}/api/article/gettopicsList`,
@@ -338,15 +448,11 @@ const modules = {
         console.error("Topics error:", error);
         setFormMessage(error.message || "Unable to fetch topics.");
     }
-};
+  }
 
-  const totalPosts = articles.length;
-  const published = articles.filter(
-    (a) => a.status === "Published"
-  ).length;
-  const drafts = articles.filter(
-    (a) => a.status !== "Published"
-  ).length;
+  useEffect(() => {
+    fetchTopics();
+  }, []);
 
   return (
     <>
@@ -427,6 +533,10 @@ const modules = {
        <div className="bg-white rounded-xl shadow mt-8">
 
         <form onSubmit={handleSubmit} className="p-8">
+
+          <h1 className="mb-6 text-2xl font-bold">
+            {isEditing ? "Edit Article" : "Add Article"}
+          </h1>
 
           {formMessage && (
             <p className="mb-6 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
@@ -537,10 +647,10 @@ const modules = {
           <div className="pt-12 flex gap-2">
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || isLoadingArticle}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
             >
-              {isSaving ? "Saving..." : "Save Article"}
+              {isSaving ? "Saving..." : isEditing ? "Update Article" : "Save Article"}
             </button>
 
             <button

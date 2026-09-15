@@ -58,7 +58,7 @@ function App() {
         />
 
       <Route
-          path="/blog/:id"
+          path="/blog/:slug"
           element={
             <ProtectedRoute token={isLoggedIn}>
               <BlogDetails  />
@@ -66,7 +66,24 @@ function App() {
           }
         />
 
-        <Route path="/add-article" element={<AddArticle />} />
+        <Route
+          path="/add-article"
+          element={
+            <ProtectedRoute>
+              <AddArticle />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-article/:id"
+          element={
+            <ProtectedRoute>
+              <AddArticle />
+            </ProtectedRoute>
+          }
+        />
+
+        
 
 
       </Routes>

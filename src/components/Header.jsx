@@ -1,12 +1,37 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth";
-import { Search } from "lucide-react";
+import {
+  ChevronDown,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  PlusCircle,
+  Search,
+  UserRound,
+} from "lucide-react";
 
 function Header() {
   const isLoggedIn = localStorage.getItem("token");
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const userName = user?.name || "My Account";
+  const avatar = user?.avatar || user?.image || user?.profile_image;
+  const initials = userName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((name) => name[0])
+    .join("")
+    .toUpperCase();
 
   const navigate = useNavigate();
 
@@ -84,12 +109,47 @@ function Header() {
 
         {/* Login / Logout */}
         {isLoggedIn ? (
-          <button
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
-            onClick={logout}
-          >
-            Logout
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsAccountMenuOpen((open) => !open)}
+              className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
+              aria-expanded={isAccountMenuOpen}
+              aria-haspopup="menu"
+            >
+              {avatar ? (
+                <img src={avatar} alt={userName} className="h-8 w-8 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                  {initials || <UserRound size={16} />}
+                </span>
+              )}
+              <span className="hidden max-w-28 truncate sm:block">{userName}</span>
+              <ChevronDown size={16} className={`transition ${isAccountMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isAccountMenuOpen && (
+              <div className="absolute right-0 mt-3 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-2 shadow-xl" role="menu">
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <p className="font-semibold text-slate-900">{userName}</p>
+                  {user?.email && <p className="mt-0.5 truncate text-xs text-slate-500">{user.email}</p>}
+                </div>
+                <Link to="/dashboard" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
+                  <LayoutDashboard size={17} /> My Account
+                </Link>
+                <Link to="/dashboard" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
+                  <FileText size={17} /> My Articles
+                </Link>
+                <Link to="/add-article" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
+                  <PlusCircle size={17} /> Add Article
+                </Link>
+                <div className="my-2 border-t border-slate-100" />
+                <button type="button" onClick={logout} className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50" role="menuitem">
+                  <LogOut size={17} /> Logout
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <Link to="/login">
             <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">

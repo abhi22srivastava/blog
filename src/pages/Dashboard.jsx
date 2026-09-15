@@ -16,6 +16,8 @@ function Dashboard() {
   const token = localStorage.getItem("token");
 
   const [articles, setArticles] = useState([]);
+  const [archivingId, setArchivingId] = useState(null);
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     fetchArticles();
@@ -40,6 +42,56 @@ function Dashboard() {
       }
     } catch (err) {
       console.log(err);
+    }
+  };
+
+  const handleArchive = async (article) => {
+    const shouldArchive = window.confirm(
+      `Archive “${article.title}”? It will no longer appear in your active articles.`
+    );
+
+    if (!shouldArchive) return;
+
+    setArchivingId(article.id);
+    setActionMessage("");
+
+    try {
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: userid }),
+      };
+
+      // Support the archive action and the legacy delete action, where delete means archive.
+      let response = await fetch(
+        `http://127.0.0.1:8000/api/article/archivearticle/${article.id}`,
+        requestOptions
+      );
+
+      if (response.status === 404) {
+        response = await fetch(
+          `http://127.0.0.1:8000/api/article/deletearticle/${article.id}`,
+          requestOptions
+        );
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to archive the article.");
+      }
+
+      setArticles((currentArticles) =>
+        currentArticles.filter((item) => item.id !== article.id)
+      );
+      setActionMessage("Article archived successfully.");
+    } catch (error) {
+      setActionMessage(error.message || "Unable to archive the article.");
+    } finally {
+      setArchivingId(null);
     }
   };
 
@@ -152,6 +204,12 @@ function Dashboard() {
 
           <div className="bg-white rounded-xl shadow mt-8">
 
+            {actionMessage && (
+              <div className="mx-6 mt-6 rounded-lg bg-blue-50 px-4 py-3 text-md text-blue-700">
+                {actionMessage}
+              </div>
+            )}
+
             <div className="flex justify-between items-center p-6 border-b">
 
               <h2 className="text-2xl font-bold">
@@ -225,7 +283,14 @@ function Dashboard() {
                               : "bg-yellow-100 text-yellow-700"
                           }`}
                         >
-                          {article.status}
+                      {article.status == 1
+                        ? "Published"
+                        : article.status == 0
+                        ? "Unpublished"
+                        : article.status == 2
+                        ? "Drafted"
+                        : ""}
+
                         </span>
 
                       </td>
@@ -235,29 +300,32 @@ function Dashboard() {
                         <div className="flex justify-center gap-3">
 
                           <Link
-                            to={`/blog/${article.id}`}
+                            to={`/blog/${article.slug || article.id}`}
                             className="text-blue-600"
+                            aria-label={`View ${article.title}`}
                           >
                             <Eye size={18} />
                           </Link>
 
                           <Link
                             to={`/edit-article/${article.id}`}
+                            state={{ article }}
                             className="text-indigo-600"
+                            aria-label={`Edit ${article.title}`}
                           >
                             <Pencil size={18} />
                           </Link>
 
-                          <button
-                            className="text-green-600"
-                          >
-                            Publish
-                          </button>
+                         
 
                           <button
-                            className="text-red-600"
+                            type="button"
+                            onClick={() => handleArchive(article)}
+                            disabled={archivingId === article.id}
+                            aria-label={`Archive ${article.title}`}
+                            className="text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <Trash2 size={18} />
+                            {archivingId === article.id ? "Archiving..." : <Trash2 size={18} />}
                           </button>
 
                         </div>
