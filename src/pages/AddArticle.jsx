@@ -9,9 +9,10 @@ import {
   FileText,
   PlusCircle,
 } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 function AddArticle() {
-  const API_URL = "http://127.0.0.1:8000";
+  const API_URL = API_BASE_URL;
   const { id: articleId } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(articleId);
@@ -467,7 +468,7 @@ const modules = {
           <div className="p-6 border-b">
        
         <img
-  src="http://127.0.0.1:8000/frontend/images/largeimg.jpg"
+  src={`${API_URL}/frontend/images/largeimg.jpg`}
   alt={user.name}
   className="w-24 h-24 rounded-full object-cover border-4 border-white"
 />

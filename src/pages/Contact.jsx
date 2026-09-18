@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { API_BASE_URL } from "../config/api";
 
 function Contact() {
   const [formData, setFormData] = useState({
@@ -70,7 +71,7 @@ const handleSubmit = async (e) => {
 
   try {
     const res = await axios.post(
-      "http://127.0.0.1:8000/api/contact",
+      `${API_BASE_URL}/api/contact`,
       formData
     );
 

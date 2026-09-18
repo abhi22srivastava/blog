@@ -1,0 +1,274 @@
+import Header from "../components/Header";
+import DashboardSidebar from "../components/DashboardSidebar";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
+  Pencil,
+  Eye,
+  Trash2,
+} from "lucide-react";
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+
+function MyArticles() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userid = user?.id;
+  const token = localStorage.getItem("token");
+
+  const [articles, setArticles] = useState([]);
+  const [archivingId, setArchivingId] = useState(null);
+  const [actionMessage, setActionMessage] = useState("");
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/article/${userid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setArticles(data.data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleArchive = async (article) => {
+    const shouldArchive = window.confirm(
+      `Archive “${article.title}”? It will no longer appear in your active articles.`
+    );
+
+    if (!shouldArchive) return;
+
+    setArchivingId(article.id);
+    setActionMessage("");
+
+    try {
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: userid }),
+      };
+
+      // Support the archive action and the legacy delete action, where delete means archive.
+      let response = await fetch(
+        `${API_BASE_URL}/api/article/archivearticle/${article.id}`,
+        requestOptions
+      );
+
+      if (response.status === 404) {
+        response = await fetch(
+          `${API_BASE_URL}/api/article/deletearticle/${article.id}`,
+          requestOptions
+        );
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to archive the article.");
+      }
+
+      setArticles((currentArticles) =>
+        currentArticles.filter((item) => item.id !== article.id)
+      );
+      setActionMessage("Article archived successfully.");
+    } catch (error) {
+      setActionMessage(error.message || "Unable to archive the article.");
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
+  return (
+    <>
+      <Header />
+
+      <div className="flex min-h-screen bg-gray-100">
+
+        <DashboardSidebar user={user} />
+
+        {/* Main */}
+
+        <div className="min-w-0 flex-1 p-4 sm:p-8">
+
+          {/* My Articles */}
+
+          <div className="overflow-x-auto bg-white rounded-xl shadow mt-8">
+
+            {actionMessage && (
+              <div className="mx-6 mt-6 rounded-lg bg-blue-50 px-4 py-3 text-md text-blue-700">
+                {actionMessage}
+              </div>
+            )}
+
+            <div className="flex justify-between items-center p-6 border-b">
+
+              <h2 className="text-2xl font-bold">
+                My Articles
+              </h2>
+
+              <Link
+                to="/add-article"
+                className="bg-blue-600 text-white px-5 py-2 rounded"
+              >
+                Add Article
+              </Link>
+
+            </div>
+
+            <table className="w-full">
+
+              <thead className="bg-gray-50">
+
+                <tr>
+
+                  <th className="p-4 text-left">
+                    Title
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Date
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Status
+                  </th>
+
+                  <th className="p-4 text-center">
+                    Actions
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {articles.length > 0 ? (
+                  articles.map((article) => (
+                    <tr
+                      key={article.id}
+                      className="border-b hover:bg-gray-50"
+                    >
+                      <td className="p-4">
+                        {article.title}
+                      </td>
+
+                          <td className="p-4">
+                            {new Date(article.created_at).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
+                          </td>
+
+                      <td className="p-4">
+
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm ${
+                            article.status === "Published"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                      {article.status == 1
+                        ? "Published"
+                        : article.status == 0
+                        ? "Unpublished"
+                        : article.status == 2
+                        ? "Drafted"
+                        : ""}
+
+                        </span>
+
+                      </td>
+
+                      <td className="p-4">
+
+                        <div className="flex justify-center gap-3">
+
+                          <Link
+                            to={`/blog/${article.slug || article.id}`}
+                            className="text-blue-600"
+                            aria-label={`View ${article.title}`}
+                          >
+                            <Eye size={18} />
+                          </Link>
+
+                          <Link
+                            to={`/edit-article/${article.id}`}
+                            state={{ article }}
+                            className="text-indigo-600"
+                            aria-label={`Edit ${article.title}`}
+                          >
+                            <Pencil size={18} />
+                          </Link>
+
+                         
+
+                          <button
+                            type="button"
+                            onClick={() => handleArchive(article)}
+                            disabled={archivingId === article.id}
+                            aria-label={`Archive ${article.title}`}
+                            className="text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {archivingId === article.id ? "Archiving..." : <Trash2 size={18} />}
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+
+                    <td
+                      colSpan="4"
+                      className="text-center p-8"
+                    >
+                      No Articles Found
+                    </td>
+
+                  </tr>
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </>
+  );
+}
+
+export default MyArticles;

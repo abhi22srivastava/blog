@@ -10,6 +10,7 @@ import blogs from './data/blogs';
 import BlogDetails from './pages/BlogDetails';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import MyArticles from './pages/MyArticles';
 import AddArticle from "./pages/AddArticle";
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from "react";
@@ -53,6 +54,15 @@ function App() {
             <ProtectedRoute>
               <Dashboard />
                
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-articles"
+          element={
+            <ProtectedRoute>
+              <MyArticles />
             </ProtectedRoute>
           }
         />

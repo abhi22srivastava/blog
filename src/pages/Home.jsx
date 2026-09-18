@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { API_BASE_URL } from "../config/api";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -105,7 +106,7 @@ const authors = [
   
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/blog/")
+    fetch(`${API_BASE_URL}/api/blog/`)
       .then((res) => res.json())
       .then((response) => {
         setBlogs(response.data);

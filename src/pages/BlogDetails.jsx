@@ -3,13 +3,17 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
-  Clock3,
+  Eye,
+  Timer,
   UserRound,
   Tag,
-  Share2,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import ArticleShare from "../components/ArticleShare";
+import RelatedArticles from "../components/RelatedArticles";
+import { API_BASE_URL } from "../config/api";
+import useArticleView from "../hooks/useArticleView";
 
 function BlogDetails() {
   const { slug } = useParams();
@@ -19,11 +23,12 @@ function BlogDetails() {
   const [error, setError] = useState("");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [topicList, setTopicList] = useState([]);
+  useArticleView(slug, !loading && !error && blog?.slug === slug ? blog.id : null, setBlog);
 
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/article/gettopicsList", {
+        const response = await fetch(`${API_BASE_URL}/api/article/gettopicsList`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             Accept: "application/json",
@@ -46,7 +51,7 @@ function BlogDetails() {
         setError("");
 
         const response = await fetch(
-          `http://127.0.0.1:8000/api/blog/${encodeURIComponent(slug)}`
+          `${API_BASE_URL}/api/blog/${encodeURIComponent(slug)}`
         );
 
         const details = await response.json();
@@ -202,16 +207,15 @@ function BlogDetails() {
     blog.description ||
     "";
 
-  const wordCount = content
-    .replace(/<[^>]*>/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean).length;
-
-  const readingTime = Math.max(
-    1,
-    Math.ceil(wordCount / 200)
-  );
+  const formatMetric = (value) => {
+    if (value == null || String(value).trim() === "" || !Number.isFinite(Number(value)) || Number(value) < 0) return "Not available";
+    return Number(value).toLocaleString("en-IN", { maximumFractionDigits: 1 });
+  };
+  const viewTime = formatMetric(blog.view_time_minutes ?? blog.view_time);
+  const articleStats = [
+    { label: "Page visits", value: formatMetric(blog.views_count ?? blog.views), icon: Eye, color: "bg-blue-50 text-blue-600", caption: "Total article views" },
+    { label: "Total time read", value: viewTime === "Not available" ? viewTime : `${viewTime} min`, icon: Timer, color: "bg-teal-50 text-teal-600", caption: "Time spent by all readers" },
+  ];
 
   const author =
     blog.author ||
@@ -304,13 +308,15 @@ function BlogDetails() {
 
           <div className="relative mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
 
-            <Link
-              to="/blog"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 backdrop-blur transition hover:bg-white/10 hover:text-white"
-            >
-              <ArrowLeft size={17} />
-              Back to articles
-            </Link>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <Link
+                to="/blog"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 backdrop-blur transition hover:bg-white/10 hover:text-white"
+              >
+                <ArrowLeft size={17} />
+                Back to articles
+              </Link>
+            </div>
 
             {/* Topics */}
             {topics.length > 0 && (
@@ -374,10 +380,6 @@ function BlogDetails() {
                 </span>
               )}
 
-              <span className="inline-flex items-center gap-2">
-                <Clock3 size={17} />
-                {readingTime} min read
-              </span>
             </div>
           </div>
         </section>
@@ -401,9 +403,28 @@ function BlogDetails() {
             )}
 
             <div className="flex flex-col p-6 sm:p-10 lg:p-12">
+              <section aria-label="Article statistics" className="mb-8 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/80 via-white to-violet-50/80 p-3 shadow-sm">
+                <div role="region" aria-label="Article activity; scroll for more" tabIndex={0} className="overflow-x-auto rounded-xl focus-visible:outline-2 focus-visible:outline-blue-600">
+                  <div className="flex min-w-max items-center gap-5">
+                    <dl className="flex items-center divide-x divide-slate-200">
+                      {articleStats.map(({ label, value, icon: Icon, color, caption }) => (
+                        <div key={label} title={`${label}: ${value}. ${caption}`} className="flex items-center gap-2 whitespace-nowrap px-3 first:pl-1">
+                          <dt className="flex items-center">
+                            <span className={`rounded-full p-2 ${color}`}><Icon size={16} aria-hidden="true" /></span>
+                            <span className="sr-only">{label}</span>
+                          </dt>
+                          <dd className="text-sm font-bold tabular-nums text-slate-800">
+                            {value} <span className="text-xs font-medium text-slate-500">{label === "Page visits" ? "visits" : "total read"}</span>
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+              </section>
 
               <div
-                className="order-2
+                className="
                   prose
                   prose-slate
                   max-w-none
@@ -454,66 +475,10 @@ function BlogDetails() {
                 }}
               />
 
-              {/* Share section */}
-              <div className="order-1 mb-10 border-b border-slate-100 pb-8">
-                <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+              <footer className="mt-10 border-t border-slate-100 pt-6">
+                <ArticleShare key={slug} slug={slug} title={blog.title} url={shareUrl} />
+              </footer>
 
-               
-
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                        shareUrl
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Share on Facebook"
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <span className="text-sm font-black">f</span>
-                    </a>
-
-                    <a
-                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                        shareUrl
-                      )}&text=${encodeURIComponent(
-                        blog.title
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Share on X"
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <span className="text-sm font-black">X</span>
-                    </a>
-
-                    <a
-                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                        shareUrl
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Share on LinkedIn"
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <span className="text-sm font-black">in</span>
-                    </a>
-
-                    <button
-                      type="button"
-                      aria-label="Copy article link"
-                      onClick={() =>
-                        navigator.clipboard?.writeText(
-                          shareUrl
-                        )
-                      }
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <Share2 size={17} />
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </article>
 
@@ -627,6 +592,8 @@ function BlogDetails() {
             )}
 
             {/* OTHER TOPICS */}
+            <RelatedArticles article={blog} />
+
             <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-lg shadow-slate-200/40">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
                 Explore other topics

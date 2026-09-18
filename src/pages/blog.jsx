@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { API_BASE_URL } from "../config/api";
 
 function Blog() {
   const [blogs, setBlogs] = useState([]);
@@ -16,7 +17,7 @@ function Blog() {
   // }, []);
 
    useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/blog/")
+    fetch(`${API_BASE_URL}/api/blog/`)
       .then((res) => res.json())
       .then((response) => {
        
