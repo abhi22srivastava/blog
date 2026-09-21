@@ -1,0 +1,134 @@
+@extends('layouts.backend') @section('title', 'The Medium') @section('content')
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h4>Manage Article List</h4>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item active">Manage Article List</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <!-- /.container-fluid -->
+</section>
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1 pr-3">
+                            @if(session('success'))
+                                <div class="alert alert-success alert-dismissible fade show " role="alert">
+                                    <strong>Success!</strong> {{ session('success') }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Right side: Action buttons --}}
+                        <div class="d-flex" style="gap: 0.5rem;">
+                            <a href="{{ route('admin.article.create') }}" class="btn btn-sm btn-success">Add New</a>
+                           
+                        </div>
+                    </div>
+
+
+                    <div class="card-body table-responsive">
+                        <table id="DataTable" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                  <th>Topic</th>
+								  <th>Name</th>
+								   <th>Short Desc</th>
+								   <th>Status</th>
+                                   <th>Publish Date</th>
+                                   <th>Action</th>
+                               </tr>
+                            </thead>
+                            <tbody>
+                               
+                            </tbody>
+                        </table>                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+<script>
+ $(document).ready(function () {
+    $('#DataTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '{{ route("admin.article.datatable") }}',
+            type: 'GET'
+        },
+        lengthMenu: [10, 25, 50, 100],
+        pageLength: 10,
+        ordering: false,
+
+        columns: [
+            { data: 'name', name: 'name' },
+            { data: 'title',orderable: false,searchable: false},
+            { data: 'long_description', name:'long_description' },
+            { data: 'status', name: 'status' },
+            { data: 'publishDate', name: 'publishDate' },
+
+            // Removed duplicate status column
+
+            {
+                data: 'action',
+                name: 'action',
+                orderable: false,
+                searchable: false
+            }
+        ],
+
+        drawCallback: function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        }
+    });
+});
+
+
+
+    $('body').on('click', '.toggle-status', function () {
+        var studentId = $(this).data('id');
+        var button = $(this);
+
+        $.ajax({
+            url: '{{ route('admin.article.status') }}', 
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                id: studentId
+            },
+            success: function (response) {
+                if (response.success) {
+                    let newClass = response.status == 1 ? 'bg-success' : 'bg-danger';
+                    let newText = response.status == 1 ? 'Active' : 'Inactive';
+
+                    button.removeClass('bg-success bg-danger').addClass(newClass).text(newText);
+                }
+            },
+            error: function () {
+                alert('Something went wrong.');
+            }
+        });
+    });
+
+  
+
+</script>
+@endsection

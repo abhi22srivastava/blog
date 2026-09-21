@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Blog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+
+class BlogController extends Controller
+{
+    public function homeblog(){
+		 $blogs = Blog::latest()->get();
+
+		 return response()->json([
+            'status' => true,
+            'message' => 'Blog List',
+            'data' => $blogs
+        ]);
+	}
+	
+	public function blogdetails($slug)
+{
+    $blog = Blog::withAnalytics()->where('slug', $slug)->first();
+
+    if (!$blog) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Blog not found',
+            'data' => null
+        ], 404);
+    }
+
+    $blog->long_description = str_replace(
+        'src="/storage',
+        'src="' . url('/storage'),
+        $blog->long_description
+    );
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Blog Details',
+        'data' => $blog
+    ]);
+}
+	
+	
+	
+}

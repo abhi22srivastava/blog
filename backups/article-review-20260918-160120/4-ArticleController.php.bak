@@ -1,0 +1,363 @@
+<?php
+
+namespace App\Http\backend\Controllers;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use App\Models\backend\article;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Str;
+class ArticleController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {  
+       // echo "asdasasdsad";exit;
+        return view('backend.article.index');
+    }
+
+    public function datatable(Request $request)
+    {
+        $columns = ['name', 'email', 'phone', 'role', 'status', 'created_at'];
+        $search = $request->input('search.value');
+        $query = DB::table('article');
+          
+            
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('admins.name', 'like', "%$search%")
+                  ->orWhere('admins.email', 'like', "%$search%")
+                  ->orWhere('admins.phone', 'like', "%$search%")
+                  ->orWhere('roles.role', 'like', "%$search%");
+            });
+        }
+
+        $totalData = $query->count();
+
+        $article = $query
+            ->orderBy('id', 'DESC')
+            ->offset($request->input('start'))
+            ->limit($request->input('length'))
+            ->get();
+
+        $data = [];
+        foreach ($article as $articledata) {
+            $id = md5($articledata->id);
+             // topic data //
+             
+            $topicIds = explode(',', $articledata->topicid);
+            $topicquery = DB::table('topics')->select('name')->whereIn('id',$topicIds)->get()->toArray();
+            $names = array_column($topicquery, 'name');
+            $name = implode(', ',$names);
+
+            $actionBtns = '
+            <div class="d-flex align-items-center" style="gap:5px">
+
+                <a href="' . route('admin.article.show', ['id' => $id]) . '" 
+                   class="badge bg-primary text-white" 
+                   title="Re View"> Re View
+                </a>
+
+                <a href="' . route('admin.article.edit', ['id' => $id]) . '" 
+                   class="badge bg-warning text-white" 
+                   title="Edit"> Edit
+                </a>
+
+                <form action="' . route('admin.article.delete', ['id' => $id]) . '" 
+                      method="POST" 
+                      onsubmit="return confirm(\'Are you sure you want to delete this record?\');">
+                    ' . csrf_field() . method_field('DELETE') . '
+                    <button type="submit" class="badge bg-danger border-0 d-flex" title="Delete">
+                       Delete
+                    </button>
+                </form>
+
+            </div>';
+
+           
+            $data[] = [
+                'name' => $name,
+                'title' => $articledata->title,
+                'long_description' => substr($articledata->long_description,0,30),
+                //'role' => $admin->role,
+                'status' => $articledata->status == 1
+                    ? '<button type="button" class="badge bg-success toggle-status border-0" data-id="' . $articledata->id . '">Active</button>'
+                    : '<button type="button" class="badge bg-danger toggle-status border-0" data-id="' . $articledata->id . '">Inactive</button>',
+                'publishDate' => $articledata->publishDate,
+                'action' => $actionBtns
+            ];
+        }
+
+        return response()->json([
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $totalData,
+            'recordsFiltered' => $totalData,
+            'data' => $data
+        ]);
+    }
+
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $topics = DB::table('topics')->get();
+        return view('backend.article.create', compact('topics'));   
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        
+        $validated = $request->validate([
+            'topicid' => 'required',
+            'title' => 'required|string|max:255',
+            'long_description' => 'nullable|string',
+            'status' => 'required|in:0,1',
+            'publishDate' => 'required|date',
+        ]);
+        $slug = Str::slug($request->title);
+        $count = Article::where('slug', 'LIKE', "{$slug}%")->count();
+        $slug = $count ? "{$slug}-{$count}" : $slug;
+
+        $topicids=implode(",",$request->input('topicid'));
+        $thumbPath = null;
+        $article = new Article();
+        $article->topicid = $topicids;
+        $article->title = $request->input('title');
+        $article->slug = $slug;
+        $article->long_description = $request->input('long_description');
+        $article->status = $request->input('status', 0); 
+        $article->publishDate = $request->input('publishDate');
+        $article->meta_title = $request->input('meta_title');
+        $article->meta_keywords = $request->input('meta_keywords');
+        $article->meta_description = $request->input('meta_description');
+        $article->created_by = auth('admin')->id();
+        $article->sent_date = now();
+        $article->save();
+        return redirect()->route('admin.article.list')->with('success', 'Article created successfully.');
+        //return redirect()->back()->with('success', 'Article created successfully.');
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $admin = DB::table('admins')
+            ->join('roles', 'admins.user_type', '=', 'roles.id')
+            ->select('admins.*', 'roles.role as role')
+            ->whereRaw("MD5(admins.id) = ?", [$id]) 
+            ->first();
+
+        if (!$admin) {
+            return redirect()->route('admin.list')->with('error', 'Admin not found.');
+        }
+
+        return view('backend.admin.show', compact('admin'));
+    }
+
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $article = DB::table('article')
+            ->whereRaw("MD5(article.id) = ?", [$id]) 
+            ->first();
+       if (!$article) {
+            return redirect()->route('admin.article.list')->with('error', 'Article not found.');
+        }
+
+        $topics = DB::table('topics')->get();
+        $topics_ids = explode(",",$article->topicid);
+       
+           
+        return view('backend.article.edit', compact('article', 'topics','topics_ids'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $article = Article::findOrFail($id); 
+         $validated = $request->validate([
+            'topicid' => 'required',
+            'title' => 'required|string|max:255',
+            'long_description' => 'nullable|string',
+            'status' => 'required|in:0,1',
+            'publishDate' => 'required|date',
+        ]);
+         
+        $topicids=implode(",",$request->input('topicid'));
+        $article->update([
+            'title' => $validated['title'],
+            'topicid' => $topicids,
+            'slug' => $validated['title'],
+            'long_description' => $validated['long_description'],
+            'publishDate' => $validated['publishDate'],
+            'status' => $validated['status'],
+            'meta_title' => $request->input('meta_title'),
+            'meta_keywords' => $request->input('meta_keywords'),
+            'meta_description' => $request->input('meta_description'),
+            'updated_at' => now(),
+        ]);
+
+
+        return redirect()->route('admin.article.list')->with('success', 'Admin updated successfully!');        
+    }
+
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+       $article = Article::whereRaw('MD5(id) = ?', [$id])->first();
+
+        if (!$article) {
+            return redirect()->route('admin.article.list')->with('error', 'Article not found.');
+        }
+
+        $article->delete();
+
+        return redirect()->route('admin.article.list')->with('success', 'Article deleted successfully!');
+    }
+
+
+    public function export()
+    {
+        $fileName = 'admins.csv';
+        $admins = DB::table('admins')
+            ->join('roles', 'admins.user_type', '=', 'roles.id')
+            ->select('admins.name', 'admins.email', 'admins.phone', 'roles.role as role', 'admins.status', 'admins.created_at')
+            ->get();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['Name', 'Email', 'Phone', 'Role', 'Status', 'Created At'];
+
+        $callback = function () use ($admins, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($admins as $admin) {
+                fputcsv($file, [
+                    $admin->name,
+                    $admin->email,
+                    $admin->phone,
+                    $admin->role,
+                    $admin->status == 1 ? 'Active' : 'Inactive',
+                    $admin->created_at
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function statusChange(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:article,id',
+        ]);
+
+        $article = DB::table('article')->where('id', $request->id)->first();
+
+        if (!$article) {
+            return response()->json(['success' => false, 'message' => 'Article not found.']);
+        }
+
+        $newStatus = $article->status === '1' ? '0' : '1'; 
+
+        DB::table('article')
+            ->where('id', $request->id)
+            ->update(['status' => $newStatus]);
+
+        return response()->json([
+            'success' => true,
+            'status' => $newStatus
+        ]);
+    }
+
+
+    public function doUploads(Request $request)
+    {
+      //dd($request);  
+      $request->validate([
+            'file' => 'required|file|max:30720', 
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $mimeType = $file->getMimeType();
+
+            if (str_starts_with($mimeType, 'image/')) {
+                $subfolder = 'image';
+            } elseif (str_starts_with($mimeType, 'video/')) {
+                $subfolder = 'video';
+            } else {
+                $subfolder = 'other';
+            }
+
+            $folder = "article/{$subfolder}";
+
+            if (!Storage::disk('public')->exists($folder)) {
+                Storage::disk('public')->makeDirectory($folder);
+            }
+
+            $path = $file->store($folder, 'public');
+            $url = Storage::url($path);
+
+            return response()->json([
+                'status' => 'success',
+                'file_url' => $url,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'error' => 'No file uploaded',
+        ]);
+    }
+
+}

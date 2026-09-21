@@ -1,5 +1,66 @@
 @import "tailwindcss";
 
+/* Keep pasted editor HTML within the article's available width. */
+.article-content {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    white-space: normal;
+    text-align: justify;
+    line-height: 1.8;
+}
+
+.article-content * {
+    box-sizing: border-box;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+.article-content :where(p, div, span, a, strong, em, li, blockquote) {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}
+
+.article-content :where(p, li) {
+    text-align: justify !important;
+}
+
+.article-content p {
+    margin-block: 0 1em;
+}
+
+.article-content :where(img, video) {
+    display: block;
+    height: auto !important;
+    margin-block: 1rem;
+    border-radius: 0.75rem;
+}
+
+.article-content iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+}
+
+.article-content :where(pre, .ql-code-block-container) {
+    overflow-x: auto;
+    white-space: pre !important;
+    overflow-wrap: normal;
+    text-align: left;
+}
+
+.article-content :where(pre, .ql-code-block-container) * {
+    white-space: pre !important;
+    overflow-wrap: normal;
+}
+
+.article-content table {
+    display: block;
+    overflow-x: auto;
+    text-align: left;
+}
+
 body{
 background:#f8fafc;
 }

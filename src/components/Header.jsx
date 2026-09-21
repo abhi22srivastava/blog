@@ -135,9 +135,12 @@ function Header() {
                   {user?.email && <p className="mt-0.5 truncate text-xs text-slate-500">{user.email}</p>}
                 </div>
                 <Link to="/dashboard" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
-                  <LayoutDashboard size={17} /> My Account
+                  <LayoutDashboard size={17} /> Dashboard
                 </Link>
-                <Link to="/dashboard" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
+                <Link to="/my-profile" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
+                  <UserRound size={17} /> My Profile
+                </Link>
+                <Link to="/my-articles" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
                   <FileText size={17} /> My Articles
                 </Link>
                 <Link to="/add-article" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
@@ -153,7 +156,7 @@ function Header() {
         ) : (
           <Link to="/login">
             <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-              Login
+              Get started
             </button>
           </Link>
         )}

@@ -424,7 +424,7 @@ function BlogDetails() {
               </section>
 
               <div
-                className="article-content min-w-0 w-full
+                className="
                   prose
                   prose-slate
                   max-w-none

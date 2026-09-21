@@ -1,0 +1,121 @@
+import Header from "../components/Header";
+import { useState, useEffect } from "react";
+import DashboardSidebar from "../components/DashboardSidebar";
+import ArticlePerformanceChart from "../components/ArticlePerformanceChart";
+import {
+  FileText,
+  Pencil,
+  Eye,
+  CalendarClock,
+  Clock3,
+  Users,
+} from "lucide-react";
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+
+function Dashboard() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userid = user?.id;
+  const token = localStorage.getItem("token");
+
+  const [articles, setArticles] = useState([]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/article/${userid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setArticles(data.data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const totalPosts = articles.length;
+  const drafts = articles.filter(
+    (a) => ["2", "draft", "drafted"].includes(String(a.status).toLowerCase())
+  ).length;
+  const scheduled = articles.filter(
+    (a) => String(a.status).toLowerCase() === "scheduled"
+  ).length;
+  const sumMetric = (fields) => {
+    if (!articles.length) return 0;
+    const values = articles.map((article) =>
+      fields.map((field) => article[field]).find((value) => value != null)
+    );
+    return values.every((value) => value !== undefined && Number.isFinite(Number(value)))
+      ? values.reduce((total, value) => total + Number(value), 0)
+      : null;
+  };
+  const totalViews = sumMetric(["views_count", "views"]);
+  const totalReadTime = sumMetric(["view_time_minutes", "reading_time", "read_time"]);
+  const totalFollowers = user?.followers_count ?? user?.total_followers ?? null;
+  const formatCount = (value) => value == null ? "—" : Number(value).toLocaleString();
+  const stats = [
+    { label: "Total Posts", value: formatCount(totalPosts), icon: FileText, colors: "from-blue-50 to-indigo-100 border-blue-200 text-blue-950", iconColors: "bg-blue-600 text-white" },
+    { label: "Total Views", value: formatCount(totalViews), icon: Eye, colors: "from-emerald-50 to-teal-100 border-emerald-200 text-emerald-950", iconColors: "bg-emerald-600 text-white" },
+    { label: "Drafts", value: formatCount(drafts), icon: Pencil, colors: "from-amber-50 to-orange-100 border-amber-200 text-amber-950", iconColors: "bg-amber-600 text-white" },
+    { label: "Scheduled", value: formatCount(scheduled), icon: CalendarClock, colors: "from-violet-50 to-purple-100 border-violet-200 text-violet-950", iconColors: "bg-violet-600 text-white" },
+    { label: "Total Read Time", value: totalReadTime == null ? "—" : `${formatCount(totalReadTime)} min`, icon: Clock3, colors: "from-rose-50 to-pink-100 border-rose-200 text-rose-950", iconColors: "bg-rose-600 text-white" },
+    { label: "Total Followers", value: formatCount(totalFollowers), icon: Users, colors: "from-cyan-50 to-sky-100 border-cyan-200 text-cyan-950", iconColors: "bg-cyan-600 text-white" },
+  ];
+
+  return (
+    <>
+      <Header />
+
+      <div className="flex min-h-screen bg-gray-100">
+
+        <DashboardSidebar user={user} />
+
+        {/* Main */}
+
+        <div className="min-w-0 flex-1 p-4 sm:p-8">
+
+          {/* Welcome */}
+
+       
+
+          {/* Stats */}
+
+          <dl className="grid grid-cols-1 gap-5 mt-8 md:grid-cols-2 xl:grid-cols-3">
+            {stats.map(({ label, value, icon: Icon, colors, iconColors }) => (
+              <div key={label} className={`rounded-2xl border bg-gradient-to-br p-6 shadow-sm ${colors}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-sm font-semibold">{label}</dt>
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconColors}`}>
+                    <Icon size={22} aria-hidden="true" />
+                  </span>
+                </div>
+                <dd className="mt-4 text-3xl font-bold tracking-tight tabular-nums">{value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <ArticlePerformanceChart articles={articles} />
+
+
+        </div>
+
+      </div>
+
+    </>
+  );
+}
+
+export default Dashboard;

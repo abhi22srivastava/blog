@@ -3,36 +3,15 @@ import DashboardSidebar from "../components/DashboardSidebar";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  Clock3,
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
   Pencil,
   Eye,
   Trash2,
-  CircleCheck,
-  Hourglass,
-  Archive,
-  CircleHelp,
 } from "lucide-react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-
-function formatMetric(value) {
-  if (value == null || String(value).trim() === "" || !Number.isFinite(Number(value)) || Number(value) < 0) return "Not available";
-  return Number(value).toLocaleString("en-IN", { maximumFractionDigits: 1 });
-}
-
-function ArticleStatus({ status }) {
-  const { icon: Icon, label, color } = {
-    "1": { icon: CircleCheck, label: "Published", color: "bg-emerald-50 text-emerald-600 ring-emerald-100" },
-    "0": { icon: Hourglass, label: "Pending review", color: "bg-amber-50 text-amber-600 ring-amber-100" },
-    "2": { icon: Archive, label: "Archived", color: "bg-slate-100 text-slate-500 ring-slate-200" },
-  }[String(status)] || { icon: CircleHelp, label: "Unknown status", color: "bg-slate-100 text-slate-500 ring-slate-200" };
-
-  return (
-    <span title={label} role="img" aria-label={label} className={`inline-flex h-9 w-9 items-center justify-center rounded-full ring-1 ${color}`}>
-      <Icon size={18} aria-hidden="true" />
-    </span>
-  );
-}
 
 function MyArticles() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -44,7 +23,9 @@ function MyArticles() {
   const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
+    fetchArticles();
+  }, []);
+
   const fetchArticles = async () => {
     try {
       const response = await fetch(
@@ -59,16 +40,13 @@ function MyArticles() {
 
       const data = await response.json();
 
-      if (response.ok && !cancelled) {
+      if (response.ok) {
         setArticles(data.data);
       }
     } catch (err) {
       console.log(err);
     }
   };
-    fetchArticles();
-    return () => { cancelled = true; };
-  }, [userid, token]);
 
   const handleArchive = async (article) => {
     const shouldArchive = window.confirm(
@@ -166,9 +144,6 @@ function MyArticles() {
                   <th className="p-4 text-left">
                     Title
                   </th>
-                  <th scope="col" className="p-4 text-left">Categories</th>
-                  <th scope="col" className="whitespace-nowrap p-4 text-left">Article views</th>
-                  <th scope="col" className="whitespace-nowrap p-4 text-left" title="Total time spent by all readers">Total reading time</th>
 
                   <th className="p-4 text-left">
                     Date
@@ -197,24 +172,6 @@ function MyArticles() {
                       <td className="p-4">
                         {article.title}
                       </td>
-                      <td className="p-4">
-                        <div className="flex min-w-36 flex-wrap gap-1.5">
-                          {article.category_names?.length ? article.category_names.map((name) => (
-                            <span key={name} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">{name}</span>
-                          )) : <span className="text-sm text-slate-400">Uncategorized</span>}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold tabular-nums text-blue-700">
-                          <Eye size={16} aria-hidden="true" />{formatMetric(article.views_count ?? article.views)}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold tabular-nums text-teal-700">
-                          <Clock3 size={16} aria-hidden="true" />
-                          {formatMetric(article.view_time_minutes)}{formatMetric(article.view_time_minutes) !== "Not available" ? " min" : ""}
-                        </span>
-                      </td>
 
                           <td className="p-4">
                             {new Date(article.created_at).toLocaleString("en-IN", {
@@ -229,7 +186,22 @@ function MyArticles() {
 
                       <td className="p-4">
 
-                        <ArticleStatus status={article.status} />
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm ${
+                            article.status === "Published"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                      {article.status == 1
+                        ? "Published"
+                        : article.status == 0
+                        ? "Unpublished"
+                        : article.status == 2
+                        ? "Drafted"
+                        : ""}
+
+                        </span>
 
                       </td>
 
@@ -276,7 +248,7 @@ function MyArticles() {
                   <tr>
 
                     <td
-                      colSpan="7"
+                      colSpan="4"
                       className="text-center p-8"
                     >
                       No Articles Found

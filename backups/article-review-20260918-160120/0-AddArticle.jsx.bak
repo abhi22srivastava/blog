@@ -1,10 +1,14 @@
 import Header from "../components/Header";
-import DashboardSidebar from "../components/DashboardSidebar";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import {
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
+} from "lucide-react";
 import { API_BASE_URL } from "../config/api";
 
 function AddArticle() {
@@ -108,7 +112,7 @@ const handleEditorChange = (value) => {
     }
 
     setFormMessage(
-      data.message || "Article submitted for review. It will be visible after approval."
+      isEditing ? "Article updated successfully." : "Article saved successfully."
     );
 
     if (isEditing) {
@@ -322,10 +326,8 @@ const modules = {
 
 
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const user = JSON.parse(localStorage.getItem("user"));
   const userid = user?.id;
-  const completionFields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
-  const completionPercent = Math.round((completionFields.filter((value) => value && String(value).trim() !== "").length / completionFields.length) * 100);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -466,12 +468,67 @@ const modules = {
     <>
       <Header />
 
-      <div className="flex min-h-screen flex-col bg-gray-100 lg:flex-row">
-        <DashboardSidebar user={user} completionPercent={completionPercent} />
+      <div className="flex min-h-screen bg-gray-100">
+
+        {/* Sidebar */}
+
+        <div className="w-64 bg-white shadow-lg">
+
+          <div className="p-6 border-b">
+       
+        <img
+  src={`${API_URL}/frontend/images/largeimg.jpg`}
+  alt={user.name}
+  className="w-24 h-24 rounded-full object-cover border-4 border-white"
+/>
+
+      
+
+            <p className="text-gray-500">
+              {user.name}
+            </p>
+
+          </div>
+
+          <ul className="mt-5">
+
+            <li>
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-3 p-4 hover:bg-blue-50"
+              >
+                <LayoutDashboard size={20} />
+                Dashboard
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/add-article"
+                className="flex items-center gap-3 p-4 hover:bg-blue-50"
+              >
+                <PlusCircle size={20} />
+                Add Article
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/my-articles"
+                className="flex items-center gap-3 p-4 hover:bg-blue-50"
+              >
+                <FileText size={20} />
+                My Articles
+              </Link>
+            </li>
+
+          </ul>
+
+        </div>
 
         {/* Main */}
 
-        <div className="min-w-0 flex-1 p-4 sm:p-8">
+        <div className="flex-1 p-8">
 
           {/* Welcome */}
 
@@ -570,9 +627,14 @@ const modules = {
               Status
             </label>
 
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {isEditing ? "Changes require a new review. Saving will hide this article until an admin approves it." : "Your article will be submitted for review and shown to readers after admin approval."}
-            </p>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="0">Un Published</option>
+              <option value="1">Published</option>
+            </select>
           </div>
 
           {/* Content */}
@@ -615,7 +677,7 @@ const modules = {
               disabled={isSaving || isLoadingArticle || isUploading}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
             >
-              {isSaving ? "Submitting..." : isEditing ? "Submit changes for review" : "Submit for review"}
+              {isSaving ? "Saving..." : isEditing ? "Update Article" : "Save Article"}
             </button>
 
             <button

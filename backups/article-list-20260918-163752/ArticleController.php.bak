@@ -1,0 +1,207 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Article;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+
+class ArticleController extends Controller
+{
+    protected $table = 'article';
+	
+
+   public function index(Request $request)
+    {
+       $articles = Article::withAnalytics()->where('created_by', $request->user()->id)
+	        ->where('status', '!=', 2)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Article List',
+            'data' => $articles
+        ]);
+    }
+	
+	
+	
+	
+	
+	public function savearticle(Request $request){
+		$topicIds = implode(',', array_column($request->topics ?? [], 'id'));
+
+		$data = $request->validate([
+        'title' => ['required', 'string', 'max:255'],
+        'slug' => ['required', 'string', 'max:255', 'unique:article,slug'],
+        'content' => ['required', 'string'],
+			]);
+
+        // Uses the authenticated Bearer-token user, rather than trusting user_id
+        $data['topicid'] = $topicIds;
+        $data['long_description'] = $request->content;
+        $data['created_by'] = $request->user()->id;
+        $data['sent_date'] = now();
+        $data['admin_type'] = '1';
+        $data['status'] = 0; // Only the admin review flow may publish an article.
+        $article = Article::create($data);
+		
+		
+
+        return response()->json([
+            'message' => 'Article submitted for review. It will be visible after approval.',
+            'data' => $article,
+        ], 201);
+	}
+	
+	
+	public function uploadImage(Request $request){
+	
+	$request->validate([
+        'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+    ]);
+
+    $file = $request->file('image'); 
+	
+
+    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+    // Save to storage/app/public/article/image
+    $path = $file->storeAs(
+        'article/image',
+        $filename,
+        'public'
+    );
+	
+	
+	
+	
+	
+
+    // URL: /storage/article/image/filename.jpg
+    $url = asset('storage/' . $path);
+
+    return response()->json([
+        'message' => 'Image uploaded successfully.',
+        'url' => $url,
+        'path' => $path,
+    ]);	
+		
+	}
+	
+	
+  public function getTopics(){
+	  
+	 $topics = DB::table('topics')
+        ->select('id', 'name')
+		->where('status','1')
+        ->orderBy('name', 'asc')
+        ->get();
+
+    return response()->json([
+        'message' => 'Topics fetched successfully.',
+        'data' => $topics,
+    ], 200);
+}
+	
+	
+public function updatearticle(Request $request, $id)
+{
+    // Find existing article
+    $article = Article::where('created_by', $request->user()->id)->find($id);
+
+    if (!$article) {
+        return response()->json([
+            'message' => 'Article not found.',
+        ], 404);
+    }
+
+    // Convert topics:
+    // [{id: 1, name: "Business"}, {id: 3, name: "Technology"}]
+    // to "1,3"
+    $topicIds = implode(
+        ',',
+        array_column($request->topics ?? [], 'id')
+    );
+
+    // Validate request
+    $data = $request->validate([
+        'title' => [
+            'required',
+            'string',
+            'max:255'
+        ],
+
+        'slug' => [
+    'required',
+    'string',
+    'max:255',
+    Rule::unique('article', 'slug')->ignore($article->id),
+],
+
+        'content' => [
+            'required',
+            'string'
+        ],
+
+    ]);
+
+    // Update additional fields
+    $data['topicid'] = $topicIds;
+    $data['long_description'] = $request->content;
+    $data['status'] = 0; // Edited content must be reviewed again.
+
+    // Update article
+    $article->update($data);
+
+    return response()->json([
+        'message' => 'Changes submitted for review. The article will be visible after approval.',
+        'data' => $article->fresh(),
+    ], 200);
+}	
+
+public function archivearticle(Request $request,$id){
+	try {
+
+        $article = DB::table('article')
+            ->where('id', $id)
+            ->first();
+
+        if (!$article) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Article not found'
+            ], 404);
+        }
+
+        DB::table('article')
+            ->where('id', $id)
+            ->update([
+                'status' => 2,
+                'updated_at' => now()
+            ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Article archived successfully'
+        ], 200);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Unable to archive article',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+	
+	
+	
+	
+}

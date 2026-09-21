@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+body{
+background:#f8fafc;
+}
+
+.story-card{
+transition:.4s;
+}
+
+.story-card:hover{
+transform:translateY(-10px);
+box-shadow:0 20px 35px rgba(0,0,0,.15);
+}
+
+.author-card:hover img{
+transform:scale(1.08);
+}
+
+.author-card img{
+transition:.4s;
+}
+
+.category-card:hover{
+background:#2563eb;
+color:#fff;
+}
+
+.hero{
+background:linear-gradient(to right,#1e3a8a,#0f172a);
+}
+
+.ql-container {
+    height: 250px !important;
+}
+
+.ql-editor {
+    height: 250px !important;
+    overflow-y: auto !important;
+}
+
+.quill-wrapper {
+    height: 350px;
+}
+
+.quill-wrapper .ql-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+}
+
+.quill-wrapper .ql-container {
+    height: 300px !important;
+}
+
+.quill-wrapper .ql-editor {
+    height: 300px !important;
+    overflow-y: auto !important;
+}

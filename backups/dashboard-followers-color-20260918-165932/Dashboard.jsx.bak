@@ -5,18 +5,17 @@ import ArticlePerformanceChart from "../components/ArticlePerformanceChart";
 import {
   FileText,
   CircleCheck,
+  Eye,
   Hourglass,
   Clock3,
   Users,
-  CheckCircle2,
-  BadgeCheck,
+
 } from "lucide-react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
 function Dashboard() {
-  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-  const [user, setUser] = useState(storedUser || {});
+  const user = JSON.parse(localStorage.getItem("user"));
   const userid = user?.id;
   const token = localStorage.getItem("token");
 
@@ -24,7 +23,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchArticles();
-  }, [userid]);
+  }, []);
 
   const fetchArticles = async () => {
     try {
@@ -48,17 +47,6 @@ function Dashboard() {
     }
   };
 
-  const completionPercent = (() => {
-    const fields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
-    const filled = fields.filter((value) => value && String(value).trim() !== "").length;
-    return Math.round((filled / fields.length) * 100);
-  })();
-  const profileStatus = completionPercent === 100
-    ? "Complete"
-    : completionPercent > 0
-      ? "In progress"
-      : "Not started";
-
   const totalPosts = articles.length;
   const published = articles.filter((article) => String(article.status) === '1').length;
   const pending = articles.filter((article) => String(article.status) === '0').length;
@@ -71,7 +59,7 @@ function Dashboard() {
       ? values.reduce((total, value) => total + Number(value), 0)
       : null;
   };
-  const totalReaders = sumMetric(["views_count", "views"]);
+  const totalViews = sumMetric(["views_count", "views"]);
   const totalReadTime = sumMetric(["view_time_minutes", "reading_time", "read_time"]);
   const totalFollowers = user?.followers_count ?? user?.total_followers ?? null;
   const formatCount = (value) => value == null ? "—" : Number(value).toLocaleString();
@@ -80,52 +68,31 @@ function Dashboard() {
     { label: "Published Posts", value: formatCount(published), icon: CircleCheck, colors: "from-emerald-50 to-teal-100 border-emerald-200 text-emerald-950", iconColors: "bg-emerald-600 text-white" },
     { label: "Pending Posts", value: formatCount(pending), icon: Hourglass, colors: "from-amber-50 to-orange-100 border-amber-200 text-amber-950", iconColors: "bg-amber-600 text-white" },
     { label: "Total Read Time", value: totalReadTime == null ? "—" : `${formatCount(totalReadTime)} min`, icon: Clock3, colors: "from-rose-50 to-pink-100 border-rose-200 text-rose-950", iconColors: "bg-rose-600 text-white" },
-    { label: "Total Users Reading", value: formatCount(totalReaders), icon: Users, colors: "from-cyan-50 to-sky-100 border-cyan-200 text-cyan-950", iconColors: "bg-cyan-600 text-white" },
-    { label: "Total Followers", value: formatCount(totalFollowers), icon: Users, colors: "from-red-50 to-red-100 border-red-200 text-red-950", iconColors: "bg-red-500 text-white", shadow: "shadow-lg shadow-red-200/40" },
+    { label: "Total Views", value: formatCount(totalViews), icon: Eye, colors: "from-cyan-50 to-sky-100 border-cyan-200 text-cyan-950", iconColors: "bg-cyan-600 text-white" },
+    { label: "Total Followers", value: formatCount(totalFollowers), icon: Users, colors: "from-yellow-50 to-yellow-100 border-yellow-200 text-yellow-950", iconColors: "bg-yellow-400 text-yellow-950", shadow: "shadow-lg shadow-yellow-300/40" },
   ];
 
   return (
     <>
       <Header />
 
-      <div className="flex min-h-screen flex-col bg-gray-100 lg:flex-row">
-        <DashboardSidebar user={user} completionPercent={completionPercent} />
+      <div className="flex min-h-screen bg-gray-100">
+
+        <DashboardSidebar user={user} />
+
+        {/* Main */}
 
         <div className="min-w-0 flex-1 p-4 sm:p-8">
-          <div className="mb-8 rounded-3xl border border-sky-100 bg-linear-to-r from-sky-50 via-indigo-50 to-violet-50 p-6 text-slate-900 shadow-xl shadow-indigo-100/60">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Welcome back, {user?.name || "Writer"}</h2>
-                <span className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-700 shadow-sm">
-                  <BadgeCheck size={15} aria-hidden="true" /> Professional
-                </span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/75 px-4 py-3 shadow-sm backdrop-blur-sm">
-                <div
-                  className="relative flex h-14 w-14 items-center justify-center rounded-full"
-                  style={{ background: `conic-gradient(#10b981 ${completionPercent}%, #e2e8f0 ${completionPercent}% 100%)` }}
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-sm font-extrabold text-slate-800">
-                    {completionPercent}%
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Profile completion</div>
-                  <div className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
-                    <CheckCircle2 size={16} />
-                    {profileStatus}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-5 h-2.5 w-full overflow-hidden rounded-full bg-white/80">
-              <div className="h-full rounded-full bg-linear-to-r from-emerald-400 via-cyan-400 to-indigo-500" style={{ width: `${completionPercent}%` }} />
-            </div>
-          </div>
+
+          {/* Welcome */}
+
+       
+
+          {/* Stats */}
 
           <dl className="grid grid-cols-1 gap-5 mt-8 md:grid-cols-2 xl:grid-cols-3">
             {stats.map(({ label, value, icon: Icon, colors, iconColors, shadow = "shadow-sm" }) => (
-              <div key={label} className={`rounded-2xl border bg-linear-to-br p-6 ${shadow} ${colors}`}>
+              <div key={label} className={`rounded-2xl border bg-gradient-to-br p-6 ${shadow} ${colors}`}>
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-sm font-semibold">{label}</dt>
                   <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconColors}`}>
@@ -138,8 +105,12 @@ function Dashboard() {
           </dl>
 
           <ArticlePerformanceChart articles={articles} />
+
+
         </div>
+
       </div>
+
     </>
   );
 }

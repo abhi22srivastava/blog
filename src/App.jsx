@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import MyArticles from './pages/MyArticles';
 import AddArticle from "./pages/AddArticle";
+import MyProfile from "./pages/MyProfile";
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from "react";
 
@@ -54,6 +55,15 @@ function App() {
             <ProtectedRoute>
               <Dashboard />
                
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-profile"
+          element={
+            <ProtectedRoute>
+              <MyProfile />
             </ProtectedRoute>
           }
         />

@@ -7,10 +7,6 @@ import {
   Pencil,
   Eye,
   Trash2,
-  CircleCheck,
-  Hourglass,
-  Archive,
-  CircleHelp,
 } from "lucide-react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -18,20 +14,6 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, ""
 function formatMetric(value) {
   if (value == null || String(value).trim() === "" || !Number.isFinite(Number(value)) || Number(value) < 0) return "Not available";
   return Number(value).toLocaleString("en-IN", { maximumFractionDigits: 1 });
-}
-
-function ArticleStatus({ status }) {
-  const { icon: Icon, label, color } = {
-    "1": { icon: CircleCheck, label: "Published", color: "bg-emerald-50 text-emerald-600 ring-emerald-100" },
-    "0": { icon: Hourglass, label: "Pending review", color: "bg-amber-50 text-amber-600 ring-amber-100" },
-    "2": { icon: Archive, label: "Archived", color: "bg-slate-100 text-slate-500 ring-slate-200" },
-  }[String(status)] || { icon: CircleHelp, label: "Unknown status", color: "bg-slate-100 text-slate-500 ring-slate-200" };
-
-  return (
-    <span title={label} role="img" aria-label={label} className={`inline-flex h-9 w-9 items-center justify-center rounded-full ring-1 ${color}`}>
-      <Icon size={18} aria-hidden="true" />
-    </span>
-  );
 }
 
 function MyArticles() {
@@ -229,7 +211,22 @@ function MyArticles() {
 
                       <td className="p-4">
 
-                        <ArticleStatus status={article.status} />
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm ${
+                            String(article.status) === "1"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                      {article.status == 1
+                        ? "Published"
+                        : article.status == 0
+                        ? "Pending review"
+                        : article.status == 2
+                        ? "Drafted"
+                        : ""}
+
+                        </span>
 
                       </td>
 

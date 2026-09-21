@@ -1,0 +1,45 @@
+<?php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ArticleController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
+
+
+Route::post('/contact', [ContactController::class, 'store']);
+Route::get('/blog', [BlogController::class, 'homeblog']);
+//Route::get('/blog/{id}', [BlogController::class, 'blogdetails']);
+Route::get('/blog/{slug}', [BlogController::class, 'blogdetails']);
+Route::post('/blog/{slug}/views', [\App\Http\Controllers\Api\ArticleViewController::class, 'store'])->middleware('throttle:120,1');
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+     Route::get('/blog/{slug}/bookmark', [\App\Http\Controllers\Api\ArticleBookmarkController::class, 'show']);
+     Route::put('/blog/{slug}/bookmark', [\App\Http\Controllers\Api\ArticleBookmarkController::class, 'update']);
+
+     Route::get('/article/gettopicsList', [ArticleController::class, 'getTopics']);
+     Route::get('/article/{id}', [ArticleController::class, 'index']);
+	 Route::post('/article/savearticle', [ArticleController::class, 'savearticle']);
+	 Route::post('/article/upload_images', [ArticleController::class, 'uploadImage']);
+     Route::post('/article/updatearticle/{id}',[ArticleController::class, 'updatearticle']);
+	 Route::post('/article/archivearticle/{id}', [ArticleController::class, 'archivearticle']);
+    //Route::post('/logout', [AuthController::class, 'logout']);
+
+});
+
+
+Route::middleware('auth:api')->get('/user', function (Request $request) {
+    return $request->user();
+});
