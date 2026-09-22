@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import MyArticles from './pages/MyArticles';
 import AddArticle from "./pages/AddArticle";
 import MyProfile from "./pages/MyProfile";
+import AuthorProfile from "./pages/AuthorProfile";
 import Bookmarks from "./pages/Bookmarks";
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from "react";
@@ -46,6 +47,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/authors/:slug" element={<AuthorProfile />} />
        
         <Route path="/contact" element={<Contact />} />
          <Route path="/login" element={<Login />} />
@@ -79,6 +81,24 @@ function App() {
         />
 
         <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
+
+      <Route
+          path="/:topicSlug/:slug"
+          element={
+            <ProtectedRoute token={isLoggedIn}>
+              <BlogDetails />
+            </ProtectedRoute>
+          }
+        />
+
+      <Route
+          path="/blog/:topicSlug/:slug"
+          element={
+            <ProtectedRoute token={isLoggedIn}>
+              <BlogDetails />
+            </ProtectedRoute>
+          }
+        />
 
       <Route
           path="/blog/:slug"

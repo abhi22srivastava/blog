@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
+import { articlePath } from "../utils/articlePath";
 
 function topicKeys(article) {
   const ids = String(article.topicid ?? "").split(",").map((id) => id.trim()).filter(Boolean).map((id) => `id:${id}`);
@@ -62,7 +63,7 @@ export default function RelatedArticles({ article }) {
             const thumbnail = item.featured_image || item.banner_image || item.image || item.thumbnail;
             return (
               <li key={item.id || item.slug}>
-                <Link to={`/blog/${encodeURIComponent(item.slug)}`} className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 transition hover:border-indigo-200 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                <Link to={articlePath(item)} className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 transition hover:border-indigo-200 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                   {thumbnail ? <img src={thumbnail} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl object-cover" /> : <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-400"><BookOpen size={22} aria-hidden="true" /></span>}
                   <span className="min-w-0 flex-1">
                     <span className="line-clamp-3 text-sm font-bold leading-5 text-slate-800 group-hover:text-indigo-700">{item.title || "Untitled article"}</span>

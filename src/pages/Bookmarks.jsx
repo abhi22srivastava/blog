@@ -4,6 +4,7 @@ import { ArrowUpRight, Bookmark } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { API_BASE_URL } from "../config/api";
+import { articlePath } from "../utils/articlePath";
 
 export default function Bookmarks() {
   const [articles, setArticles] = useState([]);
@@ -49,7 +50,7 @@ export default function Bookmarks() {
           ) : articles.length ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {articles.map((article) => (
-                <Link key={article.id} to={`/blog/${encodeURIComponent(article.slug)}`} className="group flex min-h-36 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                <Link key={article.id} to={articlePath(article)} className="group flex min-h-36 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                   <h2 className="line-clamp-2 text-lg font-bold text-slate-900 group-hover:text-blue-700">{article.title}</h2>
                   <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">Read article <ArrowUpRight size={16} aria-hidden="true" /></span>
                 </Link>

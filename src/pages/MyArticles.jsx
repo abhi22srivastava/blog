@@ -2,6 +2,7 @@ import Header from "../components/Header";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { articlePath } from "../utils/articlePath";
 import {
   Clock3,
   Pencil,
@@ -35,9 +36,11 @@ function ArticleStatus({ status }) {
 }
 
 function MyArticles() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "null");
   const userid = user?.id;
   const token = localStorage.getItem("token");
+  const completionFields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
+  const completionPercent = Math.round((completionFields.filter((value) => value && String(value).trim() !== "").length / completionFields.length) * 100);
 
   const [articles, setArticles] = useState([]);
   const [archivingId, setArchivingId] = useState(null);
@@ -124,9 +127,9 @@ function MyArticles() {
     <>
       <Header />
 
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex min-h-screen flex-col bg-gray-100 lg:flex-row">
 
-        <DashboardSidebar user={user} />
+        <DashboardSidebar user={user} completionPercent={completionPercent} />
 
         {/* Main */}
 
@@ -238,7 +241,7 @@ function MyArticles() {
                         <div className="flex justify-center gap-3">
 
                           <Link
-                            to={`/blog/${article.slug || article.id}`}
+                            to={articlePath(article)}
                             className="text-blue-600"
                             aria-label={`View ${article.title}`}
                           >

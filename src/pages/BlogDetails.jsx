@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -16,16 +16,21 @@ import ArticleShare from "../components/ArticleShare";
 import RelatedArticles from "../components/RelatedArticles";
 import { API_BASE_URL } from "../config/api";
 import useArticleView from "../hooks/useArticleView";
+import { articlePath } from "../utils/articlePath";
 
 function BlogDetails() {
-  const { slug } = useParams();
+  const { slug, topicSlug } = useParams();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [topicList, setTopicList] = useState([]);
-  useArticleView(slug, !loading && !error && blog?.slug === slug ? blog.id : null, setBlog);
+  const [publishedArticles, setPublishedArticles] = useState([]);
+  const [otherTopicsLoading, setOtherTopicsLoading] = useState(true);
+  useArticleView(slug, !loading && !error && blog?.slug === slug && (!blog.topic_slug || topicSlug === blog.topic_slug) ? blog.id : null, setBlog);
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -47,6 +52,27 @@ function BlogDetails() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const fetchPublishedArticles = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/blog`, {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Unable to load articles");
+        const data = await response.json();
+        if (!controller.signal.aborted) setPublishedArticles(Array.isArray(data.data) ? data.data : []);
+      } catch {
+        // Other topics are optional if the article list is unavailable.
+      } finally {
+        if (!controller.signal.aborted) setOtherTopicsLoading(false);
+      }
+    };
+    fetchPublishedArticles();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
     const fetchBlog = async () => {
       try {
         setLoading(true);
@@ -65,6 +91,9 @@ function BlogDetails() {
         }
 
         setBlog(details.data);
+        if (details.data?.topic_slug && pathname !== articlePath(details.data)) {
+          navigate(articlePath(details.data), { replace: true });
+        }
       } catch (fetchError) {
         setError(
           fetchError.message || "Unable to load this article."
@@ -75,7 +104,7 @@ function BlogDetails() {
     };
 
     fetchBlog();
-  }, [slug]);
+  }, [slug, pathname, navigate]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -141,14 +170,24 @@ function BlogDetails() {
   }, [blog]);
 
   const otherTopics = useMemo(() => {
-    const currentTopicIds = new Set(topics.map((topic) => String(topic.id)));
-    const currentTopicNames = new Set(topics.map((topic) => topic.name.toLowerCase()));
+    if (!blog?.created_by) return [];
+
+    const currentTopicIds = new Set(String(blog.topicid ?? "").split(",").map((id) => id.trim()).filter(Boolean));
+    const authorTopicArticles = new Map();
+
+    publishedArticles
+      .filter((article) => String(article.created_by) === String(blog.created_by) && String(article.id) !== String(blog.id))
+      .forEach((article) => {
+        String(article.topicid ?? "").split(",").map((id) => id.trim()).filter(Boolean).forEach((id) => {
+          if (!currentTopicIds.has(id) && !authorTopicArticles.has(id)) authorTopicArticles.set(id, article);
+        });
+      });
 
     return topicList
-      .filter((topic) => !currentTopicIds.has(String(topic.id)))
-      .filter((topic) => !currentTopicNames.has((topic.name || "").toLowerCase()))
+      .filter((topic) => authorTopicArticles.has(String(topic.id)))
+      .map((topic) => ({ ...topic, article: authorTopicArticles.get(String(topic.id)) }))
       .slice(0, 10);
-  }, [topicList, topics]);
+  }, [blog, topicList, publishedArticles]);
 
   if (loading) {
     return (
@@ -534,6 +573,12 @@ function BlogDetails() {
                   </p>
                 </div>
 
+                {authorSlug && (
+                  <Link to={`/authors/${encodeURIComponent(authorSlug)}`} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                    View author profile <ArrowUpRight size={16} aria-hidden="true" />
+                  </Link>
+                )}
+
               </div>
             </div>
 
@@ -592,22 +637,24 @@ function BlogDetails() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><Compass size={19} aria-hidden="true" /></span>
                 <div>
                   <h2 id="explore-topics-heading" className="font-bold text-slate-900">Explore other topics</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">Find something new to read</p>
+                  <p className="mt-0.5 text-xs text-slate-500">More subjects from this author</p>
                 </div>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-2">
-                {otherTopics.length > 0 ? otherTopics.map((topic) => (
+                {otherTopicsLoading ? (
+                  <span className="col-span-2 text-sm text-slate-500">Loading topics...</span>
+                ) : otherTopics.length > 0 ? otherTopics.map((topic) => (
                   <Link
                     key={topic.id}
-                    to={`/blog?topic=${encodeURIComponent(topic.slug || topic.name)}`}
+                    to={articlePath(topic.article)}
                     className="group flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
                     <span className="truncate">{topic.name}</span>
                     <ArrowUpRight size={15} className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-indigo-600" aria-hidden="true" />
                   </Link>
                 )) : (
-                  <span className="col-span-2 text-sm text-slate-500">No other topics available.</span>
+                  <span className="col-span-2 text-sm text-slate-500">No other topics from this author yet.</span>
                 )}
               </div>
             </section>

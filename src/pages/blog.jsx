@@ -4,6 +4,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { API_BASE_URL } from "../config/api";
+import { articlePath } from "../utils/articlePath";
 
 function Blog() {
   const [blogs, setBlogs] = useState([]);
@@ -80,7 +81,7 @@ function Blog() {
                   </p>
 
                   <Link
-                    to={`/blog/${blog.id}`}
+                    to={articlePath(blog)}
                     className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                   >
                     Read More
