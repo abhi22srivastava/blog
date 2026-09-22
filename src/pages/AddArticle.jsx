@@ -14,7 +14,7 @@ function AddArticle() {
   const isEditing = Boolean(articleId);
   const quillRef = useRef(null);
   const [topicList, setTopicList] = useState([]);
-  const [selectedTopics, setSelectedTopics] = useState([]);
+  const [selectedTopic, setSelectedTopic] = useState(null);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
@@ -26,13 +26,8 @@ function AddArticle() {
   const [isLoadingArticle, setIsLoadingArticle] = useState(isEditing);
 
 
-const handleTopicChange = (selectedOptions) => {
-    setSelectedTopics(
-        (selectedOptions || []).map((option) => ({
-            id: option.value,
-            name: option.label,
-        }))
-    );
+const handleTopicChange = (option) => {
+    setSelectedTopic(option ? { id: option.value, name: option.label } : null);
 };
 
 
@@ -92,7 +87,7 @@ const handleEditorChange = (value) => {
       },
       body: JSON.stringify({
         user_id: userid,
-        topics: selectedTopics,
+        topics: selectedTopic ? [selectedTopic] : [],
         title: title.trim(),
         slug,
         status,
@@ -116,7 +111,7 @@ const handleEditorChange = (value) => {
       return;
     }
 
-    setSelectedTopics([]);
+    setSelectedTopic(null);
     setTitle("");
     setSlug("");
     setContent("");
@@ -155,7 +150,7 @@ const getImageUrl = (path) => {
 
 
 const handleReset = () => {
-  setSelectedTopics([]);
+  setSelectedTopic(null);
   setTitle("");
   setSlug("");
   setContent("");
@@ -383,10 +378,8 @@ const modules = {
                 .filter((id) => id != null && String(id).trim() !== "");
 
             // Use the exact option objects so react-select marks them as selected.
-            setSelectedTopics(
-                topicList.filter((topic) =>
-                    topicIds.some((id) => String(id) === String(topic.id))
-                )
+            setSelectedTopic(
+                topicList.find((topic) => String(topic.id) === String(topicIds[0])) || null
             );
 
             setTitle(article.title || "");
@@ -500,24 +493,20 @@ const modules = {
          {/* Topics */}
 <div className="mb-6">
   <label className="block font-semibold mb-2">
-    Topics
+    Topic
   </label>
 
  
 
   <Select
-    isMulti
     isSearchable
     options={topicList.map((topic) => ({
         value: topic.id,
         label: topic.name,
     }))}
-    value={selectedTopics.map((topic) => ({
-        value: topic.id,
-        label: topic.name,
-    }))}
+    value={selectedTopic ? { value: selectedTopic.id, label: selectedTopic.name } : null}
     onChange={handleTopicChange}
-    placeholder="Select topics..."
+    placeholder="Select a topic..."
     noOptionsMessage={() => "No topics found"}
 />
 
@@ -531,7 +520,7 @@ const modules = {
 
 
   <p className="text-sm text-gray-500 mt-2">
-    Select one or more topics. You can search by topic name.
+    Select one topic. You can search by topic name.
   </p>
 </div>
 

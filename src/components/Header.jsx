@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth";
 import {
   ChevronDown,
+  Bookmark,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -143,6 +144,9 @@ function Header() {
                 <Link to="/my-articles" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
                   <FileText size={17} /> My Articles
                 </Link>
+                <Link to="/bookmarks" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
+                  <Bookmark size={17} /> Bookmarks
+                </Link>
                 <Link to="/add-article" onClick={() => setIsAccountMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700" role="menuitem">
                   <PlusCircle size={17} /> Add Article
                 </Link>
@@ -156,7 +160,7 @@ function Header() {
         ) : (
           <Link to="/login">
             <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-              Get started
+              Start writing
             </button>
           </Link>
         )}

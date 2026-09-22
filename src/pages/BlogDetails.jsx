@@ -7,6 +7,8 @@ import {
   Timer,
   UserRound,
   Tag,
+  ArrowUpRight,
+  Compass,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -230,10 +232,19 @@ function BlogDetails() {
     "Editorial Team";
 
   const authorImage =
+    author.profile_picture ||
     author.avatar ||
     author.image ||
     author.profile_image ||
     blog.author_image;
+
+  const authorImageUrl = authorImage
+    ? /^https?:\/\//i.test(authorImage)
+      ? authorImage
+      : `${API_BASE_URL}/${String(authorImage).replace(/^\/+/, "").replace(/^(?!storage\/)/, "storage/")}`
+    : null;
+
+  const authorSlug = author.slug || blog.author_slug;
 
   const authorBio =
     author.bio ||
@@ -496,9 +507,9 @@ function BlogDetails() {
                 </p>
 
                 <div className="mt-6">
-                  {authorImage ? (
+                  {authorImageUrl ? (
                     <img
-                      src={authorImage}
+                      src={authorImageUrl}
                       alt={authorName}
                       className="h-20 w-20 rounded-2xl object-cover shadow-lg ring-4 ring-blue-50"
                     />
@@ -512,6 +523,8 @@ function BlogDetails() {
                     {authorName}
                   </h3>
 
+                  {authorSlug && <p className="mt-1 text-sm text-slate-500">@{authorSlug}</p>}
+
                   <p className="mt-1 text-sm font-medium text-blue-600">
                     Article Author
                   </p>
@@ -521,38 +534,22 @@ function BlogDetails() {
                   </p>
                 </div>
 
-                {author.slug && (
-                  <Link
-                    to={`/author/${author.slug}`}
-                    className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-600"
-                  >
-                    View author profile
-                  </Link>
-                )}
               </div>
             </div>
 
             {/* TOPICS */}
             {topics.length > 0 && (
-              <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-lg shadow-slate-200/40">
-
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                    <Tag size={17} />
-                  </div>
-
-                  <div>
-                    <p className="font-black text-slate-900">
-                      Article topics
-                    </p>
-
-                    <p className="text-xs text-slate-500">
-                      Explore related categories
-                    </p>
+              <section aria-labelledby="article-topics-heading" className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-lg shadow-slate-200/40">
+                <div className="border-b border-slate-100 bg-gradient-to-br from-slate-50 to-blue-50/70 px-7 py-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm ring-1 ring-blue-100"><Tag size={18} aria-hidden="true" /></span>
+                    <div>
+                      <h2 id="article-topics-heading" className="font-bold text-slate-900">Related topics</h2>
+                      <p className="mt-0.5 text-xs text-slate-500">Explore this article's subjects</p>
+                    </div>
                   </div>
                 </div>
-
-                <div className="mt-6 space-y-2">
+                <div className="space-y-2 p-4">
                   {topics.map((topic) => {
                     const active =
                       isCurrentTopic(topic);
@@ -569,54 +566,51 @@ function BlogDetails() {
                             ? `/blog/topic/${topic.slug}`
                             : "#"
                         }
-                        className={`group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                        className={`group flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                           active
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20"
-                            : "bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                            ? "border-blue-200 bg-blue-50 text-blue-800"
+                            : "border-transparent bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                         }`}
                       >
-                        <span>
-                          {topic.name}
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${active ? "bg-blue-600" : "bg-slate-300 group-hover:bg-blue-500"}`} />
+                          <span className="truncate">{topic.name}</span>
                         </span>
-
-                        {active && (
-                          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                            Current
-                          </span>
-                        )}
+                        <ArrowUpRight size={16} className="shrink-0 opacity-50 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" aria-hidden="true" />
                       </Link>
                     );
                   })}
                 </div>
-              </div>
+              </section>
             )}
 
             {/* OTHER TOPICS */}
             <RelatedArticles article={blog} />
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-lg shadow-slate-200/40">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                Explore other topics
-              </p>
+            <section aria-labelledby="explore-topics-heading" className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/40 sm:p-7">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><Compass size={19} aria-hidden="true" /></span>
+                <div>
+                  <h2 id="explore-topics-heading" className="font-bold text-slate-900">Explore other topics</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">Find something new to read</p>
+                </div>
+              </div>
 
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                Discover more articles by topic.
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-6 grid grid-cols-2 gap-2">
                 {otherTopics.length > 0 ? otherTopics.map((topic) => (
                   <Link
                     key={topic.id}
                     to={`/blog?topic=${encodeURIComponent(topic.slug || topic.name)}`}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    className="group flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
-                    {topic.name}
+                    <span className="truncate">{topic.name}</span>
+                    <ArrowUpRight size={15} className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-indigo-600" aria-hidden="true" />
                   </Link>
                 )) : (
-                  <span className="text-sm text-slate-500">No other topics available.</span>
+                  <span className="col-span-2 text-sm text-slate-500">No other topics available.</span>
                 )}
               </div>
-            </div>
+            </section>
 
           </aside>
         </div>

@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import MyArticles from './pages/MyArticles';
 import AddArticle from "./pages/AddArticle";
 import MyProfile from "./pages/MyProfile";
+import Bookmarks from "./pages/Bookmarks";
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from "react";
 
@@ -76,6 +77,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
 
       <Route
           path="/blog/:slug"
