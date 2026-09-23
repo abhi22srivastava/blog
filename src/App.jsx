@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route  } from "react-router-dom";
 
 import Home from './pages/Home';
 import About from './pages/About';
-import Blog from './pages/blog';
+import Articles from './pages/Articles';
 import Contact from './pages/Contact';
 import blogs from './data/blogs';
 import BlogDetails from './pages/BlogDetails';
@@ -14,6 +14,7 @@ import MyArticles from './pages/MyArticles';
 import AddArticle from "./pages/AddArticle";
 import MyProfile from "./pages/MyProfile";
 import AuthorProfile from "./pages/AuthorProfile";
+import Authors from "./pages/Authors";
 import Bookmarks from "./pages/Bookmarks";
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from "react";
@@ -46,7 +47,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/blog" element={<Blog />} />
+        <Route path="/articles" element={<Articles />} />
+        <Route path="/blog" element={<Articles />} />
+        <Route path="/authors" element={<Authors />} />
         <Route path="/authors/:slug" element={<AuthorProfile />} />
        
         <Route path="/contact" element={<Contact />} />

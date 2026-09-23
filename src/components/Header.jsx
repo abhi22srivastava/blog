@@ -7,8 +7,10 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Menu,
   PlusCircle,
   Search,
+  X,
   UserRound,
 } from "lucide-react";
 
@@ -40,47 +42,56 @@ function Header() {
     e.preventDefault();
 
     if (search.trim()) {
-      navigate(`/search?q=${encodeURIComponent(search)}`);
+      navigate(`/articles?q=${encodeURIComponent(search.trim())}`);
       setSearch("");
     }
   };
 
   return (
-    <header className="bg-white shadow sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-5">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
 
         {/* Logo */}
-        <h1 className="text-3xl font-bold text-blue-600">
-          BlogSphere
-        </h1>
+        <Link to="/" className="group flex shrink-0 items-center gap-2.5" onClick={() => setIsOpen(false)}>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white shadow-lg shadow-blue-100 transition group-hover:bg-blue-600">B<span className="text-cyan-300">S</span></span>
+          <span className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Blog<span className="text-blue-600">Sphere</span></span>
+        </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden items-center gap-1 md:flex">
 
-          <Link to="/" className="hover:text-blue-600">
+          <Link to="/" className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700">
             Home
           </Link>
 
           <Link
             to="/about"
             onClick={() => setIsOpen(false)}
-            className="hover:text-blue-600"
+            className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
           >
             About
           </Link>
 
           <Link
-            to="/blog"
+            to="/articles"
             onClick={() => setIsOpen(false)}
-            className="hover:text-blue-600"
+            className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
           >
-            Blog
+            Articles
+          </Link>
+
+          <Link
+            to="/authors"
+            onClick={() => setIsOpen(false)}
+            className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+          >
+            Authors
           </Link>
 
           <Link
             to="/contact"
             onClick={() => setIsOpen(false)}
-            className="hover:text-blue-600"
+            className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
           >
             Contact
           </Link>
@@ -90,19 +101,20 @@ function Header() {
         {/* Search */}
         <form
   onSubmit={handleSearch}
-  className="hidden lg:flex items-center bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm"
+  className="hidden items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm transition focus-within:border-blue-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50 lg:flex"
 >
   <input
     type="text"
     placeholder="Search articles..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
-    className="bg-transparent px-5 py-2 w-64 outline-none"
+    className="w-56 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-slate-400"
   />
 
   <button
     type="submit"
-    className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full m-1 transition duration-300"
+    aria-label="Search articles"
+    className="m-1 rounded-lg bg-blue-600 p-2.5 text-white transition duration-300 hover:bg-blue-700"
   >
     <Search size={18} />
   </button>
@@ -110,7 +122,7 @@ function Header() {
 
         {/* Login / Logout */}
         {isLoggedIn ? (
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <button
               type="button"
               onClick={() => setIsAccountMenuOpen((open) => !open)}
@@ -158,14 +170,27 @@ function Header() {
             )}
           </div>
         ) : (
-          <Link to="/login">
-            <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-              Start writing
-            </button>
+          <Link to="/login" className="hidden rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-200 transition hover:bg-blue-600 sm:block">
+            Start writing
           </Link>
         )}
 
+        <button type="button" onClick={() => setIsOpen((open) => !open)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 md:hidden" aria-label={isOpen ? "Close menu" : "Open menu"} aria-expanded={isOpen}>
+          {isOpen ? <X size={21} /> : <Menu size={21} />}
+        </button>
+
       </div>
+
+      {isOpen && <div className="border-t border-slate-100 bg-white px-4 pb-4 pt-2 md:hidden">
+        <nav className="space-y-1">
+          {[['/', 'Home'], ['/about', 'About'], ['/articles', 'Articles'], ['/authors', 'Authors'], ['/contact', 'Contact']].map(([to, label]) => <Link key={to} to={to} onClick={() => setIsOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700">{label}</Link>)}
+        </nav>
+        <form onSubmit={handleSearch} className="mt-3 flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <input type="text" placeholder="Search articles..." value={search} onChange={(e) => setSearch(e.target.value)} className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
+          <button type="submit" aria-label="Search articles" className="rounded-lg bg-blue-600 p-2.5 text-white"><Search size={17} /></button>
+        </form>
+        {!isLoggedIn && <Link to="/login" onClick={() => setIsOpen(false)} className="mt-3 block rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white">Start writing</Link>}
+      </div>}
     </header>
   );
 }

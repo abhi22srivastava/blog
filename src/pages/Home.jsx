@@ -6,7 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { API_BASE_URL } from "../config/api";
 import { articlePath } from "../utils/articlePath";
-import { ArrowUpRight, Award, BookOpen, PenLine, Quote } from "lucide-react";
+import { ArrowUpRight, Award, BookOpen, CalendarDays, Clock3, PenLine, Quote, UserRound } from "lucide-react";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -165,8 +165,8 @@ function Home() {
       </div>
     </section>
 
-<section className="bg-gray-100 py-10">
-  <div className="max-w-7xl mx-auto px-6">
+<section className="bg-slate-50 py-12 sm:py-16">
+  <div className="mx-auto max-w-7xl px-4 sm:px-6">
     {featuredBlogs.length > 0 ? <Swiper
       modules={[Navigation, Pagination, Autoplay]}
       navigation
@@ -175,59 +175,39 @@ function Home() {
         delay: 4000,
         disableOnInteraction: false,
       }}
-      className="rounded-2xl overflow-hidden shadow-xl"
+      className="overflow-hidden rounded-[28px] shadow-xl shadow-slate-900/10"
     >
       {featuredBlogs.map((blog) => (
         <SwiperSlide key={blog.id}>
-          <div className="grid lg:grid-cols-2 bg-white">
-
-            {/* Left Image */}
-            <div className="relative">
-              <img
-                src={getArticleImage(blog)}
-                alt={blog.title}
-                className="w-full h-[550px] object-cover"
-              />
-
-              <span className="absolute top-6 left-6 bg-red-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                ⭐ Featured
-              </span>
-            </div>
-
-            {/* Right Content */}
-            <div className="flex items-center p-10">
-              <div>
-
-                <span className="text-blue-600 font-semibold uppercase">
-                  Featured article
-                </span>
-
-                <h1 className="text-5xl font-bold mt-4 leading-tight">
-                  {blog.title}
-                </h1>
-
-                <div
-                  className="article-content mt-6 max-h-48 overflow-hidden text-lg text-gray-600"
-                  dangerouslySetInnerHTML={{ __html: blog.long_description || "" }}
+          <article className="grid min-h-130 bg-white lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="relative min-h-70 lg:min-h-full">
+              <div className="absolute inset-2.5 overflow-hidden rounded-2xl">
+                <img
+                  src={getArticleImage(blog)}
+                  alt={blog.title}
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
                 />
-
-                <div className="flex items-center gap-6 mt-8 text-gray-500">
-                  <span>👤 {blog.author?.name || "BlogSphere writer"}</span>
-                  <span>📅 {new Date(blog.created_at || Date.now()).toLocaleDateString()}</span>
-                  <span>⏱ 8 min read</span>
+                <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-slate-950/10 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 text-white sm:bottom-8 sm:left-8 sm:right-8">
+                  <span className="inline-flex rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] backdrop-blur-sm">Featured story</span>
+                  <p className="mt-3 text-sm font-semibold text-slate-200">{blog.topic_name || blog.topic_slug?.replace(/-/g, " ") || "Editor's pick"}</p>
                 </div>
-
-                <Link
-                  to={articlePath(blog)}
-                  className="inline-block mt-8 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold transition"
-                >
-                  Read Full Article →
-                </Link>
-
               </div>
             </div>
-
-          </div>
+            <div className="flex items-center p-7 sm:p-10 lg:p-12">
+              <div className="w-full">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">Editor&apos;s selection</p>
+                <h2 className="mt-4 text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-4xl xl:text-5xl">{blog.title}</h2>
+                <p className="mt-5 line-clamp-4 text-base leading-7 text-slate-600">{getArticleText(blog) || "A thoughtful story from the BlogSphere community."}</p>
+                <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-slate-100 py-5 text-sm font-semibold text-slate-500">
+                  <span className="inline-flex items-center gap-2"><UserRound size={16} className="text-blue-600" aria-hidden="true" />{blog.author?.name || "BlogSphere writer"}</span>
+                  <span className="inline-flex items-center gap-2"><CalendarDays size={16} className="text-blue-600" aria-hidden="true" />{new Date(blog.created_at || blog.publishDate || Date.now()).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  <span className="inline-flex items-center gap-2"><Clock3 size={16} className="text-blue-600" aria-hidden="true" />{getReadingTime(blog)} min read</span>
+                </div>
+                <Link to={articlePath(blog)} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-slate-950">Read full article <ArrowUpRight size={17} aria-hidden="true" /></Link>
+              </div>
+            </div>
+          </article>
         </SwiperSlide>
       ))}
     </Swiper> : <div className="rounded-2xl bg-white px-6 py-16 text-center shadow-xl"><h2 className="text-2xl font-bold text-slate-900">Featured stories are coming soon</h2><p className="mt-2 text-slate-500">Check back when our editors select the next story for the home page.</p></div>}

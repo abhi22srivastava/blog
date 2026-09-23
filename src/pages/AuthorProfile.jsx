@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowUpRight, BookOpen, CalendarDays, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, CalendarDays, Users, UserRound } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { API_BASE_URL } from "../config/api";
 import { articlePath } from "../utils/articlePath";
+import AuthorFollow from "../components/AuthorFollow";
+import AuthorShare from "../components/AuthorShare";
 
 const imageUrl = (path) => !path ? null : /^https?:\/\//i.test(path)
   ? path : `${API_BASE_URL}/storage/${String(path).replace(/^\/?(?:storage\/)?/, "")}`;
@@ -59,10 +61,18 @@ export default function AuthorProfile() {
                 <h1 id="author-name" className="mt-2 break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{author.name}</h1>
                 <p className="mt-1 text-sm font-medium text-slate-500">@{author.slug}</p>
                 <p className="mt-5 max-w-3xl whitespace-pre-line text-base leading-7 text-slate-600">{author.bio || "Stories and perspectives from this writer."}</p>
+                <div className="mt-5"><AuthorShare name={author.name} /></div>
               </div>
-              <div className="flex shrink-0 items-center gap-3 rounded-2xl bg-indigo-50 px-5 py-4 text-indigo-800">
-                <BookOpen size={24} aria-hidden="true" />
-                <div><p className="text-2xl font-bold leading-none">{articles.length}</p><p className="mt-1 text-xs font-semibold">Published {articles.length === 1 ? "article" : "articles"}</p></div>
+              <div className="flex w-full shrink-0 flex-col gap-3 sm:w-40">
+                <div className="flex items-center gap-3 rounded-2xl bg-indigo-50 px-4 py-4 text-indigo-800">
+                  <BookOpen size={22} aria-hidden="true" />
+                  <div><p className="text-2xl font-bold leading-none">{articles.length}</p><p className="mt-1 text-xs font-semibold">Published</p></div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl bg-blue-50 px-4 py-4 text-blue-800">
+                  <Users size={22} aria-hidden="true" />
+                  <div><p className="text-2xl font-bold leading-none">{Number(author.followers_count || 0).toLocaleString()}</p><p className="mt-1 text-xs font-semibold">Followers</p></div>
+                </div>
+                <AuthorFollow slug={author.slug} onChange={(data) => setAuthor((current) => ({ ...current, followers_count: data.followers_count }))} />
               </div>
             </div>
           </section>

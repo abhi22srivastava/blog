@@ -14,6 +14,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ArticleShare from "../components/ArticleShare";
 import RelatedArticles from "../components/RelatedArticles";
+import AuthorFollow from "../components/AuthorFollow";
 import { API_BASE_URL } from "../config/api";
 import useArticleView from "../hooks/useArticleView";
 import { articlePath } from "../utils/articlePath";
@@ -546,17 +547,21 @@ function BlogDetails() {
                 </p>
 
                 <div className="mt-6">
-                  {authorImageUrl ? (
-                    <img
-                      src={authorImageUrl}
-                      alt={authorName}
-                      className="h-20 w-20 rounded-2xl object-cover shadow-lg ring-4 ring-blue-50"
-                    />
-                  ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 ring-4 ring-blue-50">
-                      <UserRound size={34} />
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between gap-4">
+                    {authorImageUrl ? (
+                      <img
+                        src={authorImageUrl}
+                        alt={authorName}
+                        className="h-20 w-20 rounded-2xl object-cover shadow-lg ring-4 ring-blue-50"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 ring-4 ring-blue-50">
+                        <UserRound size={34} />
+                      </div>
+                    )}
+
+                    {authorSlug && <AuthorFollow slug={authorSlug} />}
+                  </div>
 
                   <h3 className="mt-5 text-xl font-black text-slate-900">
                     {authorName}
@@ -574,9 +579,11 @@ function BlogDetails() {
                 </div>
 
                 {authorSlug && (
-                  <Link to={`/authors/${encodeURIComponent(authorSlug)}`} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                    View author profile <ArrowUpRight size={16} aria-hidden="true" />
-                  </Link>
+                  <div className="mt-6">
+                    <Link to={`/authors/${encodeURIComponent(authorSlug)}`} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                      View author profile <ArrowUpRight size={16} aria-hidden="true" />
+                    </Link>
+                  </div>
                 )}
 
               </div>

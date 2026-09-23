@@ -10,9 +10,9 @@ import {
   Users,
   CheckCircle2,
   BadgeCheck,
+  UserMinus,
 } from "lucide-react";
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+import { API_BASE_URL } from "../config/api";
 
 function Dashboard() {
   const storedUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -21,10 +21,31 @@ function Dashboard() {
   const token = localStorage.getItem("token");
 
   const [articles, setArticles] = useState([]);
+  const [following, setFollowing] = useState([]);
 
   useEffect(() => {
     fetchArticles();
+    fetchFollowing();
   }, [userid]);
+
+  const fetchFollowing = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/following`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      if (response.ok) setFollowing((await response.json()).data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const unfollow = async (slug) => {
+    const response = await fetch(`${API_BASE_URL}/api/authors/${encodeURIComponent(slug)}/follow`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ following: false }),
+    });
+    if (response.ok) setFollowing((authors) => authors.filter((author) => author.slug !== slug));
+  };
 
   const fetchArticles = async () => {
     try {
@@ -138,6 +159,11 @@ function Dashboard() {
           </dl>
 
           <ArticlePerformanceChart articles={articles} />
+
+          <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="following-heading">
+            <div className="flex items-center justify-between gap-4"><div><h2 id="following-heading" className="text-xl font-bold text-slate-900">Authors you follow</h2><p className="mt-1 text-sm text-slate-500">Manage the writers in your reading list.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">{following.length}</span></div>
+            {following.length ? <div className="mt-5 divide-y divide-slate-100">{following.map((author) => <div key={author.id} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"><div className="min-w-0"><p className="truncate font-semibold text-slate-900">{author.name}</p><p className="truncate text-sm text-slate-500">@{author.slug}</p></div><button type="button" onClick={() => unfollow(author.slug)} className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"><UserMinus size={16} aria-hidden="true" />Unfollow</button></div>)}</div> : <p className="mt-5 text-sm text-slate-500">You are not following any authors yet.</p>}
+          </section>
         </div>
       </div>
     </>
