@@ -1,5 +1,5 @@
-﻿import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { ArrowRight, BookOpen, Feather } from "lucide-react";
 import { FaGoogle, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import Header from "../components/Header";
@@ -8,51 +8,12 @@ import { API_BASE_URL } from "../config/api";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [register, setRegister] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [fields, setFields] = useState({ name: "", email: "", password: "", password_confirmation: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const googleError = searchParams.get("google_error");
-    const googleToken = searchParams.get("google_token");
-    const facebookError = searchParams.get("facebook_error");
-    const facebookToken = searchParams.get("facebook_token");
-    const encodedUser = searchParams.get("google_user") || searchParams.get("facebook_user");
-    const socialToken = googleToken || facebookToken;
-
-    if (googleError || facebookError) {
-      setError(googleError || facebookError);
-      setSearchParams({}, { replace: true });
-      return;
-    }
-
-    if (socialToken && encodedUser) {
-      try {
-        const user = JSON.parse(atob(encodedUser));
-        localStorage.setItem("token", socialToken);
-        localStorage.setItem("user", JSON.stringify(user));
-        navigate("/dashboard", { replace: true });
-      } catch {
-        setError("Social sign-in returned an invalid account response.");
-        setSearchParams({}, { replace: true });
-      }
-    }
-  }, [navigate, searchParams, setSearchParams]);
-
-  function signInWithGoogle() {
-    setError("");
-    window.location.assign(`${API_BASE_URL}/api/google/redirect`);
-  }
-
-  function signInWithFacebook() {
-    setError("");
-    window.location.assign(`${API_BASE_URL}/api/facebook/redirect`);
-  }
-
   if (localStorage.getItem("token")) return <Navigate to="/dashboard" replace />;
 
   function switchMode(value) {
@@ -181,13 +142,9 @@ export default function Login() {
           <div className="mb-8 flex rounded-xl bg-slate-100 p-1">{[false, true].map((mode) => <button key={String(mode)} type="button" disabled={loading} aria-pressed={register === mode} onClick={() => switchMode(mode)} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold ${register === mode ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500"}`}>{mode ? "Create account" : "Sign in"}</button>)}</div>
           <h1 id="auth-heading" className="text-3xl font-bold tracking-tight text-slate-900">{register ? "Join the conversation" : "Welcome back"}</h1>
           <p className="mt-2 text-sm text-slate-500">{register ? "Create your account to start reading and writing." : "Sign in to continue your reading and writing journey."}</p>
-          {!register && (
-            <>
-              <div className="mt-6 grid grid-cols-3 gap-2"><button type="button" onClick={signInWithGoogle} disabled={loading} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"><FaGoogle size={19} className="text-red-500" aria-hidden="true" />Google</button><button type="button" onClick={signInWithFacebook} disabled={loading} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"><FaFacebookF size={19} className="text-blue-600" aria-hidden="true" />Facebook</button><button type="button" disabled title="LinkedIn sign-in is not available yet" className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-semibold text-slate-400 disabled:cursor-not-allowed"><FaLinkedinIn size={19} aria-hidden="true" />LinkedIn</button></div>
-              <p className="mt-2 text-xs text-slate-500">Sign in with Google, Facebook, or continue with email below.</p>
-              <div className="my-6 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" />Continue with email<span className="h-px flex-1 bg-slate-200" /></div>
-            </>
-          )}
+          <div className="mt-6 grid grid-cols-3 gap-2">{[{ name: "Google", Icon: FaGoogle }, { name: "Facebook", Icon: FaFacebookF }, { name: "LinkedIn", Icon: FaLinkedinIn }].map(({ name, Icon }) => <button key={name} type="button" disabled title={`${name} sign-in is not available yet`} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-semibold text-slate-400 disabled:cursor-not-allowed"><Icon size={19} aria-hidden="true" />{name}</button>)}</div>
+          <p className="mt-2 text-xs text-slate-500">Social sign-in is not available yet. Continue with email below.</p>
+          <div className="my-6 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" />Continue with email<span className="h-px flex-1 bg-slate-200" /></div>
           {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           <form onSubmit={submit}><fieldset disabled={loading} className="space-y-4 disabled:opacity-60">
             {inputs.map(({ key, label, type, autoComplete, placeholder }) => <label key={key} className="block text-sm font-semibold text-slate-700">{label}<input required type={type} autoComplete={autoComplete} minLength={register && key === "password" ? 8 : undefined} maxLength={register ? (type === "password" ? 128 : 255) : undefined} value={fields[key]} onChange={(e) => setFields({ ...fields, [key]: e.target.value })} placeholder={placeholder} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100" /></label>)}
