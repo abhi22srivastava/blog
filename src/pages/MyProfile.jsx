@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, UserRound } from "lucide-react";
 import Header from "../components/Header";
 import DashboardSidebar from "../components/DashboardSidebar";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -30,6 +31,7 @@ export default function MyProfile() {
     phone: storedUser?.phone || "",
     address: storedUser?.address || "",
     bio: storedUser?.bio || "",
+    expertise: storedUser?.expertise || "",
     profile_picture: null,
   });
   const [saving, setSaving] = useState(false);
@@ -68,11 +70,7 @@ export default function MyProfile() {
     };
   }, [form.slug, token, user?.slug]);
 
-  const completionPercent = (() => {
-    const fields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
-    const filled = fields.filter((value) => value && String(value).trim() !== "").length;
-    return Math.round((filled / fields.length) * 100);
-  })();
+  const completionPercent = calculateProfileCompletion(user);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -105,6 +103,7 @@ export default function MyProfile() {
       if (form.phone) data.append("phone", form.phone);
       if (form.address) data.append("address", form.address);
       if (form.bio) data.append("bio", form.bio);
+      data.append("expertise", form.expertise);
       if (form.profile_picture) data.append("profile_picture", form.profile_picture);
 
       const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
@@ -133,6 +132,7 @@ export default function MyProfile() {
         phone: updatedUser.phone || "",
         address: updatedUser.address || "",
         bio: updatedUser.bio || "",
+        expertise: updatedUser.expertise || "",
         profile_picture: null,
       });
       setMessage("Profile saved successfully.");
@@ -205,6 +205,12 @@ export default function MyProfile() {
               <div className="space-y-2 md:col-span-2">
                 <label className="block text-sm font-semibold text-slate-700">Bio / short line</label>
                 <textarea name="bio" rows="5" value={form.bio} onChange={handleChange} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100" placeholder="Write a short bio about yourself" />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700">Expertise</label>
+                <textarea name="expertise" rows="3" maxLength={500} value={form.expertise} onChange={handleChange} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100" placeholder="For example: Product design, technology, and writing" />
+                <p className="text-xs text-slate-500">Share the subjects and skills you write about.</p>
               </div>
 
               <div className="space-y-2 md:col-span-2">

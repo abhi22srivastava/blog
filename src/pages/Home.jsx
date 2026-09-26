@@ -446,8 +446,8 @@ function Home() {
             {author.name}
           </h3>
 
-          <p className="mt-1 text-sm font-medium text-blue-600">@{author.slug}</p>
-          <div className="mx-auto mt-6 flex w-full max-w-[180px] items-center justify-center gap-2.5 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-sm shadow-blue-100">
+          <p className="mt-2 min-h-10 text-sm font-semibold leading-5 text-blue-700">{author.expertise || "Writer and storyteller"}</p>
+          <div className="mx-auto mt-2 flex w-full max-w-[180px] items-center justify-center gap-2.5 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-sm shadow-blue-100">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <BookOpen size={15} aria-hidden="true" />
             </div>
@@ -457,7 +457,7 @@ function Home() {
             </div>
           </div>
 
-          <Link to={`/authors/${encodeURIComponent(author.slug)}`} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-slate-950">
+          <Link to={`/authors/${encodeURIComponent(author.slug)}`} className="mx-2 mt-auto inline-flex w-auto items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-slate-950">
             View Profile <ArrowUpRight size={17} aria-hidden="true" />
           </Link>
         </div>

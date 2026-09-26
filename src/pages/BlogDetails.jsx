@@ -9,6 +9,8 @@ import {
   Tag,
   ArrowUpRight,
   Compass,
+  ThumbsDown,
+  ThumbsUp,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -18,6 +20,19 @@ import AuthorFollow from "../components/AuthorFollow";
 import { API_BASE_URL } from "../config/api";
 import useArticleView from "../hooks/useArticleView";
 import { articlePath } from "../utils/articlePath";
+
+const readJsonResponse = async (response, fallbackMessage) => {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(response.ok ? fallbackMessage : "The server returned an invalid response.");
+  }
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || fallbackMessage);
+  }
+  return data;
+};
 
 function BlogDetails() {
   const { slug, topicSlug } = useParams();
@@ -31,7 +46,82 @@ function BlogDetails() {
   const [topicList, setTopicList] = useState([]);
   const [publishedArticles, setPublishedArticles] = useState([]);
   const [otherTopicsLoading, setOtherTopicsLoading] = useState(true);
+  const [reaction, setReaction] = useState(null);
+  const [reactionCounts, setReactionCounts] = useState({ likes_count: 0, dislikes_count: 0 });
+  const [reactionLoading, setReactionLoading] = useState(false);
+  const [reactionMessage, setReactionMessage] = useState("");
   useArticleView(slug, !loading && !error && blog?.slug === slug && (!blog.topic_slug || topicSlug === blog.topic_slug) ? blog.id : null, setBlog);
+
+  useEffect(() => {
+    if (!blog?.slug) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return;
+    }
+
+    fetch(`${API_BASE_URL}/api/blog/${encodeURIComponent(blog.slug)}/reaction`, {
+      headers: {
+        Authorization: "Bearer " + token,
+        Accept: "application/json",
+      },
+    })
+    .then(async (response) => {
+      const data = await readJsonResponse(response, "Unable to load article reaction.");
+        setReaction(data.data?.reaction || null);
+        setReactionCounts({
+          likes_count: Number(data.data?.likes_count || 0),
+          dislikes_count: Number(data.data?.dislikes_count || 0),
+        });
+      })
+      .catch((reactionError) => setReactionMessage(reactionError.message || "Unable to load your reaction."));
+  }, [blog]);
+
+  const handleReaction = async (nextReaction) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login", { state: { from: pathname } });
+      return;
+    }
+
+    const previousReaction = reaction;
+    const selectedReaction = previousReaction === nextReaction ? null : nextReaction;
+    setReaction(selectedReaction);
+    setReactionCounts((current) => ({
+      ...current,
+      likes_count: current.likes_count + (selectedReaction === "like" ? 1 : 0) - (previousReaction === "like" ? 1 : 0),
+      dislikes_count: current.dislikes_count + (selectedReaction === "dislike" ? 1 : 0) - (previousReaction === "dislike" ? 1 : 0),
+    }));
+    setReactionLoading(true);
+    setReactionMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/blog/${encodeURIComponent(blog.slug)}/reaction`, {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer " + token,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reaction: nextReaction }),
+      });
+      const data = await readJsonResponse(response, "Unable to save your reaction.");
+      setReaction(data.data?.reaction || null);
+      setReactionCounts({
+        likes_count: Number(data.data?.likes_count || 0),
+        dislikes_count: Number(data.data?.dislikes_count || 0),
+      });
+    } catch (reactionError) {
+      setReaction(previousReaction);
+      setReactionCounts({
+        likes_count: Number(blog.likes_count || 0),
+        dislikes_count: Number(blog.dislikes_count || 0),
+      });
+      setReactionMessage(reactionError.message || "Unable to save your reaction.");
+    } finally {
+      setReactionLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -42,7 +132,7 @@ function BlogDetails() {
             Accept: "application/json",
           },
         });
-        const data = await response.json();
+        const data = await readJsonResponse(response, "Unable to load topics.");
         if (response.ok) setTopicList(data.data || []);
       } catch {
         // Topic navigation is optional, so the article page remains usable if it fails.
@@ -61,7 +151,7 @@ function BlogDetails() {
           signal: controller.signal,
         });
         if (!response.ok) throw new Error("Unable to load articles");
-        const data = await response.json();
+        const data = await readJsonResponse(response, "Unable to load articles.");
         if (!controller.signal.aborted) setPublishedArticles(Array.isArray(data.data) ? data.data : []);
       } catch {
         // Other topics are optional if the article list is unavailable.
@@ -83,13 +173,7 @@ function BlogDetails() {
           `${API_BASE_URL}/api/blog/${encodeURIComponent(slug)}`
         );
 
-        const details = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            details.message || "Unable to load this article."
-          );
-        }
+        const details = await readJsonResponse(response, "Unable to load this article.");
 
         setBlog(details.data);
         if (details.data?.topic_slug && pathname !== articlePath(details.data)) {
@@ -248,6 +332,12 @@ function BlogDetails() {
     blog.long_description ||
     blog.description ||
     "";
+  const displayedReactionCounts = localStorage.getItem("token")
+    ? reactionCounts
+    : {
+        likes_count: Number(blog.likes_count || 0),
+        dislikes_count: Number(blog.dislikes_count || 0),
+      };
 
   const formatMetric = (value) => {
     if (value == null || String(value).trim() === "" || !Number.isFinite(Number(value)) || Number(value) < 0) return "Not available";
@@ -471,6 +561,21 @@ function BlogDetails() {
                       ))}
                     </dl>
                   </div>
+                </div>
+              </section>
+
+              <section aria-label="Article reactions" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div>
+                  <p className="text-sm font-bold text-slate-800">What do you think?</p>
+                  <p className="mt-1 text-xs text-slate-500">{reactionMessage || "Your reaction helps us improve."}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => handleReaction("like")} disabled={reactionLoading} aria-pressed={reaction === "like"} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${reaction === "like" ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-600"}`}>
+                    <ThumbsUp size={17} /> Like <span>{displayedReactionCounts.likes_count}</span>
+                  </button>
+                  <button type="button" onClick={() => handleReaction("dislike")} disabled={reactionLoading} aria-pressed={reaction === "dislike"} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${reaction === "dislike" ? "border-rose-600 bg-rose-600 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-rose-400 hover:text-rose-600"}`}>
+                    <ThumbsDown size={17} /> Dislike <span>{displayedReactionCounts.dislikes_count}</span>
+                  </button>
                 </div>
               </section>
 

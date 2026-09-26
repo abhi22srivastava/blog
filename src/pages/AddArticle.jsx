@@ -2,10 +2,11 @@ import Header from "../components/Header";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { API_BASE_URL } from "../config/api";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 
 function AddArticle() {
   const API_URL = API_BASE_URL;
@@ -24,10 +25,49 @@ function AddArticle() {
   const [isSaving, setIsSaving] = useState(false);
   const [formMessage, setFormMessage] = useState("");
   const [isLoadingArticle, setIsLoadingArticle] = useState(isEditing);
+  const [isCreatingTopic, setIsCreatingTopic] = useState(false);
 
 
 const handleTopicChange = (option) => {
     setSelectedTopic(option ? { id: option.value, name: option.label } : null);
+};
+
+const handleCreateTopic = async (name) => {
+  const topicName = name.trim();
+  if (!topicName || isCreatingTopic) return;
+  const currentToken = localStorage.getItem("token");
+
+  if (!currentToken) {
+      setFormMessage("Your session has expired. Please sign in again.");
+      return;
+  }
+
+  setIsCreatingTopic(true);
+  setFormMessage("");
+  try {
+      const response = await fetch(`${API_URL}/api/article/topics`, {
+          method: "POST",
+          headers: {
+              Authorization: `Bearer ${currentToken}`,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: topicName }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to create topic.");
+
+      const topic = data.data;
+      setTopicList((current) => current.some((item) => String(item.id) === String(topic.id))
+          ? current
+          : [...current, topic].sort((first, second) => first.name.localeCompare(second.name)));
+      setSelectedTopic(topic);
+      setFormMessage(data.message || "Topic created successfully.");
+  } catch (error) {
+      setFormMessage(error.message || "Unable to create topic.");
+  } finally {
+      setIsCreatingTopic(false);
+  }
 };
 
 
@@ -103,7 +143,7 @@ const handleEditorChange = (value) => {
     }
 
     setFormMessage(
-      data.message || "Article submitted for review. It will be visible after approval."
+      data.message || "Article saved successfully."
     );
 
     if (isEditing) {
@@ -319,8 +359,7 @@ const modules = {
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const userid = user?.id;
-  const completionFields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
-  const completionPercent = Math.round((completionFields.filter((value) => value && String(value).trim() !== "").length / completionFields.length) * 100);
+  const completionPercent = calculateProfileCompletion(user);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -393,13 +432,7 @@ const modules = {
                 )
             );
 
-            setStatus(
-                article.status === "Published" ||
-                article.status === 1 ||
-                article.status === "1"
-                    ? "1"
-                    : "0"
-            );
+            setStatus(String(article.status ?? "0"));
 
         } catch (error) {
             console.error("Edit article error:", error);
@@ -498,8 +531,9 @@ const modules = {
 
  
 
-  <Select
+  <CreatableSelect
     isSearchable
+    isDisabled={isCreatingTopic}
     options={topicList.map((topic) => ({
         value: topic.id,
         label: topic.name,
@@ -507,7 +541,9 @@ const modules = {
     value={selectedTopic ? { value: selectedTopic.id, label: selectedTopic.name } : null}
     onChange={handleTopicChange}
     placeholder="Select a topic..."
-    noOptionsMessage={() => "No topics found"}
+    noOptionsMessage={() => "No topics found. Type a topic name to create it."}
+    onCreateOption={handleCreateTopic}
+    formatCreateLabel={(inputValue) => `Create topic "${inputValue}"`}
 />
 
 
@@ -520,7 +556,7 @@ const modules = {
 
 
   <p className="text-sm text-gray-500 mt-2">
-    Select one topic. You can search by topic name.
+    Select one topic, or type a new topic name and choose the create option.
   </p>
 </div>
 
@@ -558,9 +594,17 @@ const modules = {
             <label className="block font-semibold mb-2">
               Status
             </label>
-
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {isEditing ? "Changes require a new review. Saving will hide this article until an admin approves it." : "Your article will be submitted for review and shown to readers after admin approval."}
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3"
+            >
+              <option value="0">Draft</option>
+              <option value="1">Published</option>
+              <option value="2">Deactivated</option>
+            </select>
+            <p className="mt-2 text-sm text-slate-500">
+              Published articles are visible to readers. Draft and deactivated articles are hidden.
             </p>
           </div>
 
@@ -604,7 +648,7 @@ const modules = {
               disabled={isSaving || isLoadingArticle || isUploading}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
             >
-              {isSaving ? "Submitting..." : isEditing ? "Submit changes for review" : "Submit for review"}
+              {isSaving ? "Saving..." : isEditing ? "Save changes" : "Publish article"}
             </button>
 
             <button

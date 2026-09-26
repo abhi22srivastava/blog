@@ -13,6 +13,7 @@ import {
   UserMinus,
 } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 
 function Dashboard() {
   const storedUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -24,9 +25,27 @@ function Dashboard() {
   const [following, setFollowing] = useState([]);
 
   useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
     fetchArticles();
     fetchFollowing();
   }, [userid]);
+
+  const fetchProfile = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      const data = await response.json();
+      if (response.ok && data.profile) {
+        setUser(data.profile);
+        localStorage.setItem("user", JSON.stringify(data.profile));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const fetchFollowing = async () => {
     if (!token) return;
@@ -69,11 +88,7 @@ function Dashboard() {
     }
   };
 
-  const completionPercent = (() => {
-    const fields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
-    const filled = fields.filter((value) => value && String(value).trim() !== "").length;
-    return Math.round((filled / fields.length) * 100);
-  })();
+  const completionPercent = calculateProfileCompletion(user);
   const profileStatus = completionPercent === 100
     ? "Complete"
     : completionPercent > 0

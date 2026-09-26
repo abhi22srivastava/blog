@@ -59,7 +59,10 @@ export default function AuthorProfile() {
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600">Author profile</p>
                 <h1 id="author-name" className="mt-2 break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{author.name}</h1>
-                <p className="mt-1 text-sm font-medium text-slate-500">@{author.slug}</p>
+                {author.expertise && <div className="mt-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Expertise</p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-indigo-700">{author.expertise}</p>
+                </div>}
                 <p className="mt-5 max-w-3xl whitespace-pre-line text-base leading-7 text-slate-600">{author.bio || "Stories and perspectives from this writer."}</p>
                 <div className="mt-5"><AuthorShare name={author.name} /></div>
               </div>

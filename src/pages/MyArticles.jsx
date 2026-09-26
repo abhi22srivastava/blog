@@ -3,6 +3,7 @@ import DashboardSidebar from "../components/DashboardSidebar";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { articlePath } from "../utils/articlePath";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
 import {
   Clock3,
   Pencil,
@@ -24,8 +25,8 @@ function formatMetric(value) {
 function ArticleStatus({ status }) {
   const { icon: Icon, label, color } = {
     "1": { icon: CircleCheck, label: "Published", color: "bg-emerald-50 text-emerald-600 ring-emerald-100" },
-    "0": { icon: Hourglass, label: "Pending review", color: "bg-amber-50 text-amber-600 ring-amber-100" },
-    "2": { icon: Archive, label: "Archived", color: "bg-slate-100 text-slate-500 ring-slate-200" },
+    "0": { icon: Hourglass, label: "Draft", color: "bg-amber-50 text-amber-600 ring-amber-100" },
+    "2": { icon: Archive, label: "Deactivated", color: "bg-slate-100 text-slate-500 ring-slate-200" },
   }[String(status)] || { icon: CircleHelp, label: "Unknown status", color: "bg-slate-100 text-slate-500 ring-slate-200" };
 
   return (
@@ -39,8 +40,7 @@ function MyArticles() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const userid = user?.id;
   const token = localStorage.getItem("token");
-  const completionFields = [user?.name, user?.email, user?.phone, user?.address, user?.bio, user?.profile_picture];
-  const completionPercent = Math.round((completionFields.filter((value) => value && String(value).trim() !== "").length / completionFields.length) * 100);
+  const completionPercent = calculateProfileCompletion(user);
 
   const [articles, setArticles] = useState([]);
   const [archivingId, setArchivingId] = useState(null);
