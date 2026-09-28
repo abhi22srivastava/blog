@@ -11,8 +11,6 @@ import {
   Compass,
   ThumbsDown,
   ThumbsUp,
-  MessageCircle,
-  Send,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -52,121 +50,7 @@ function BlogDetails() {
   const [reactionCounts, setReactionCounts] = useState({ likes_count: 0, dislikes_count: 0 });
   const [reactionLoading, setReactionLoading] = useState(false);
   const [reactionError, setReactionError] = useState("");
-  const [questionState, setQuestionState] = useState(null);
-  const [questionDraft, setQuestionDraft] = useState("");
-  const [questionReplyDrafts, setQuestionReplyDrafts] = useState({});
-  const [submittingQuestion, setSubmittingQuestion] = useState(false);
-  const [savingReplyId, setSavingReplyId] = useState(null);
-  const [questionActionError, setQuestionActionError] = useState("");
   useArticleView(slug, !loading && !error && blog?.slug === slug && (!blog.topic_slug || topicSlug === blog.topic_slug) ? blog.id : null, setBlog);
-
-  const hasCurrentQuestionState = Boolean(blog?.slug && questionState?.slug === blog.slug);
-  const questions = hasCurrentQuestionState ? questionState.questions : [];
-  const questionsLoading = Boolean(blog?.slug && !hasCurrentQuestionState);
-  const isArticleAuthor = hasCurrentQuestionState && questionState.isAuthor;
-  const questionsError = hasCurrentQuestionState ? questionState.error : "";
-
-  useEffect(() => {
-    if (!blog?.slug) return undefined;
-
-    const controller = new AbortController();
-    const token = localStorage.getItem("token");
-    fetch(`${API_BASE_URL}/api/blog/${encodeURIComponent(blog.slug)}/questions`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    })
-      .then((response) => readJsonResponse(response, "Unable to load questions."))
-      .then((data) => {
-        if (controller.signal.aborted) return;
-        setQuestionState({
-          slug: blog.slug,
-          questions: Array.isArray(data.data) ? data.data : [],
-          isAuthor: Boolean(data.is_author),
-          error: "",
-        });
-        setQuestionReplyDrafts({});
-      })
-      .catch((loadError) => {
-        if (!controller.signal.aborted) {
-          setQuestionState({ slug: blog.slug, questions: [], isAuthor: false, error: loadError.message || "Unable to load questions." });
-        }
-      });
-
-    return () => controller.abort();
-  }, [blog?.slug]);
-
-  const submitQuestion = async (event) => {
-    event.preventDefault();
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login", { state: { from: pathname } });
-      return;
-    }
-    const question = questionDraft.trim();
-    if (!question) return;
-
-    setSubmittingQuestion(true);
-    setQuestionActionError("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/blog/${encodeURIComponent(blog.slug)}/questions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ question }),
-      });
-      const data = await readJsonResponse(response, "Unable to submit your question.");
-      setQuestionState((current) => current?.slug === blog.slug
-        ? { ...current, questions: [...current.questions, data.data] }
-        : current);
-      setQuestionDraft("");
-    } catch (submitError) {
-      setQuestionActionError(submitError.message || "Unable to submit your question.");
-    } finally {
-      setSubmittingQuestion(false);
-    }
-  };
-
-  const submitAnswer = async (event, questionId) => {
-    event.preventDefault();
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login", { state: { from: pathname } });
-      return;
-    }
-    const answer = (questionReplyDrafts[questionId] || "").trim();
-    if (!answer) return;
-
-    setSavingReplyId(questionId);
-    setQuestionActionError("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/blog/${encodeURIComponent(blog.slug)}/questions/${questionId}/answer`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ answer }),
-      });
-      const data = await readJsonResponse(response, "Unable to save your reply.");
-      setQuestionState((current) => current?.slug === blog.slug
-        ? {
-            ...current,
-            questions: current.questions.map((question) => question.id === questionId ? data.data : question),
-          }
-        : current);
-    } catch (answerError) {
-      setQuestionActionError(answerError.message || "Unable to save your reply.");
-    } finally {
-      setSavingReplyId(null);
-    }
-  };
 
   useEffect(() => {
     if (!blog?.slug) return undefined;
@@ -743,69 +627,6 @@ function BlogDetails() {
               <footer className="mt-10 border-t border-slate-100 pt-6">
                 <ArticleShare key={slug} slug={slug} title={blog.title} url={shareUrl} />
               </footer>
-
-              <section aria-labelledby="questions-heading" className="mt-12 border-t border-slate-100 pt-8">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-xl bg-blue-50 p-2.5 text-blue-600"><MessageCircle size={20} aria-hidden="true" /></span>
-                  <div>
-                    <h2 id="questions-heading" className="text-2xl font-bold tracking-tight text-slate-900">Questions &amp; Answers</h2>
-                    <p className="mt-1 text-sm text-slate-500">Ask the author about this article.</p>
-                  </div>
-                </div>
-
-                {questionsError && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{questionsError}</p>}
-                {questionActionError && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{questionActionError}</p>}
-
-                {localStorage.getItem("token") ? (
-                  <form onSubmit={submitQuestion} className="mt-6">
-                    <label htmlFor="article-question" className="mb-2 block text-sm font-semibold text-slate-700">Your question</label>
-                    <textarea id="article-question" required maxLength={2000} rows={3} value={questionDraft} onChange={(event) => setQuestionDraft(event.target.value)} placeholder="What would you like to ask the author?" className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <span className="text-xs text-slate-500">{questionDraft.length}/2000 characters</span>
-                      <button type="submit" disabled={submittingQuestion || !questionDraft.trim()} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-                        <Send size={16} aria-hidden="true" /> {submittingQuestion ? "Sending..." : "Ask question"}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <Link to="/login" state={{ from: pathname }} className="font-semibold text-blue-600 hover:text-blue-700">Sign in</Link> to ask the author a question.
-                  </p>
-                )}
-
-                <div className="mt-7 space-y-4">
-                  {questionsLoading ? (
-                    <p className="text-sm text-slate-500">Loading questions...</p>
-                  ) : questions.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">No questions yet. Start the conversation.</p>
-                  ) : questions.map((question) => (
-                    <article key={question.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-                      <div className="flex items-start gap-3">
-                        <MessageCircle size={17} className="mt-0.5 shrink-0 text-blue-600" aria-hidden="true" />
-                        <div className="min-w-0 flex-1">
-                          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-800">{question.question}</p>
-                          <p className="mt-2 text-xs text-slate-500">Asked by {question.asker_name}</p>
-                          {question.answer && (
-                            <div className="mt-4 rounded-xl border-l-2 border-blue-500 bg-white px-4 py-3">
-                              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{question.answer}</p>
-                              <p className="mt-2 text-xs font-medium text-slate-500">Reply from {question.responder_name || authorName}</p>
-                            </div>
-                          )}
-                          {isArticleAuthor && (
-                            <form onSubmit={(event) => submitAnswer(event, question.id)} className="mt-4">
-                              <label htmlFor={`answer-${question.id}`} className="mb-2 block text-sm font-semibold text-slate-700">{question.answer ? "Edit your reply" : "Your reply"}</label>
-                              <textarea id={`answer-${question.id}`} required maxLength={5000} rows={2} value={questionReplyDrafts[question.id] ?? question.answer ?? ""} onChange={(event) => setQuestionReplyDrafts((current) => ({ ...current, [question.id]: event.target.value }))} className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
-                              <button type="submit" disabled={savingReplyId === question.id || !(questionReplyDrafts[question.id] ?? question.answer ?? "").trim()} className="mt-2 inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60">
-                                <Send size={15} aria-hidden="true" /> {savingReplyId === question.id ? "Saving..." : question.answer ? "Update reply" : "Reply"}
-                              </button>
-                            </form>
-                          )}
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
 
             </div>
           </article>
