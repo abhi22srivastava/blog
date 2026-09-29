@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, UserRound } from "lucide-react";
+import { Camera, KeyRound, UserRound, X } from "lucide-react";
 import Header from "../components/Header";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
@@ -36,6 +36,11 @@ export default function MyProfile() {
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current_password: "", password: "", password_confirmation: "" });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [slugStatus, setSlugStatus] = useState({ slug: "", available: null, checking: false, error: "" });
 
   useEffect(() => {
@@ -144,6 +149,46 @@ export default function MyProfile() {
     }
   };
 
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+    setPasswordMessage("");
+    setPasswordError("");
+
+    if (passwordForm.password !== passwordForm.password_confirmation) {
+      setPasswordError("The new password and confirmation do not match.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/password`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(passwordForm),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        const firstValidationError = Object.values(payload.errors || {}).flat()[0];
+        throw new Error(firstValidationError || payload.message || "Unable to change password.");
+      }
+
+      setPasswordMessage(payload.message || "Password changed successfully.");
+      setPasswordForm({ current_password: "", password: "", password_confirmation: "" });
+      window.setTimeout(() => {
+        setChangePasswordOpen(false);
+        setPasswordMessage("");
+      }, 900);
+    } catch (error) {
+      setPasswordError(error.message || "Unable to change password.");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -152,11 +197,16 @@ export default function MyProfile() {
 
         <main className="flex-1 p-6 lg:p-10">
           <div className="mx-auto max-w-4xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 lg:p-8">
-            <div className="mb-8">
+            <div className="mb-8 flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Account</p>
                 <h1 className="mt-2 text-3xl font-bold text-slate-900">My Profile</h1>
               </div>
+              <button type="button" onClick={() => { setPasswordError(""); setPasswordMessage(""); setChangePasswordOpen(true); }} className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
+                <KeyRound size={17} />
+                <span className="hidden sm:inline">Change password</span>
+                <span className="sm:hidden">Password</span>
+              </button>
             </div>
 
             <div className="mb-8 flex items-center gap-4 rounded-3xl border border-indigo-100 bg-linear-to-r from-indigo-50 via-white to-purple-50 p-5">
@@ -234,6 +284,40 @@ export default function MyProfile() {
           </div>
         </main>
       </div>
+      {changePasswordOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget && !passwordSaving) setChangePasswordOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="change-password-title" className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><KeyRound size={21} /></div>
+                <h2 id="change-password-title" className="text-xl font-bold text-slate-900">Change password</h2>
+                <p className="mt-1 text-sm text-slate-500">Enter your current password and choose a new one.</p>
+              </div>
+              <button type="button" aria-label="Close" disabled={passwordSaving} onClick={() => setChangePasswordOpen(false)} className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"><X size={19} /></button>
+            </div>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              {[
+                ["current_password", "Current password", "current-password"],
+                ["password", "New password", "new-password"],
+                ["password_confirmation", "Confirm new password", "new-password"],
+              ].map(([name, label, autocomplete]) => (
+                <label key={name} className="block space-y-2 text-sm font-semibold text-slate-700">
+                  {label}
+                  <input type="password" name={name} autoComplete={autocomplete} required minLength={name === "current_password" ? undefined : 8} maxLength={128} value={passwordForm[name]} onChange={(event) => setPasswordForm((current) => ({ ...current, [name]: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100" />
+                </label>
+              ))}
+              {passwordError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{passwordError}</p>}
+              {passwordMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{passwordMessage}</p>}
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" disabled={passwordSaving} onClick={() => setChangePasswordOpen(false)} className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={passwordSaving} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-60">
+                  {passwordSaving ? "Updating..." : "Update password"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </>
   );
 }

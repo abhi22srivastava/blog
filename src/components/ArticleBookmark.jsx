@@ -13,7 +13,7 @@ export default function ArticleBookmark({ slug }) {
   const endpoint = `${API_BASE_URL}/api/blog/${encodeURIComponent(slug)}/bookmark`;
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) return undefined;
     let ignore = false;
     fetch(endpoint, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
       .then(async (response) => {
@@ -27,8 +27,8 @@ export default function ArticleBookmark({ slug }) {
   }, [endpoint, token, attempt]);
 
   async function toggle() {
-    setBusy(true);
     if (!ready) { setAttempt((value) => value + 1); return; }
+    setBusy(true);
     try {
       const response = await fetch(endpoint, {
         method: "PUT",
@@ -43,18 +43,17 @@ export default function ArticleBookmark({ slug }) {
     finally { setBusy(false); }
   }
 
-  const buttonClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60";
+  const buttonClass = "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-600 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:cursor-wait disabled:opacity-60";
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex items-center">
       {token ? (
-        <button type="button" onClick={toggle} disabled={busy} aria-pressed={saved} className={buttonClass}>
-          <Bookmark size={18} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
-          {busy ? "Please wait…" : !ready ? "Retry bookmark" : saved ? "Bookmarked" : "Bookmark article"}
+        <button type="button" onClick={toggle} disabled={busy} aria-pressed={saved} aria-label={busy ? "Updating bookmark" : !ready ? "Retry bookmark" : saved ? "Remove bookmark" : "Bookmark article"} title={saved ? "Bookmarked" : "Bookmark article"} className={`${buttonClass} ${saved ? "border-amber-300 bg-amber-50 text-amber-600" : ""}`}>
+          <Bookmark size={18} strokeWidth={2} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
         </button>
       ) : (
-        <Link to="/login" className={buttonClass}><Bookmark size={18} aria-hidden="true" />Sign in to bookmark</Link>
+        <Link to="/login" aria-label="Sign in to bookmark article" title="Sign in to bookmark" className={buttonClass}><Bookmark size={18} strokeWidth={2} aria-hidden="true" /></Link>
       )}
-      <p role="status" className={message ? "text-xs text-slate-600" : "sr-only"}>{message}</p>
+      <p role="status" className="sr-only">{message}</p>
     </div>
   );
 }

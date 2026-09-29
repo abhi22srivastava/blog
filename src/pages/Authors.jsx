@@ -3,6 +3,7 @@ import { ArrowUpRight, Users, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import TrustedAuthorBadge from "../components/TrustedAuthorBadge";
 import { API_BASE_URL } from "../config/api";
 
 const imageUrl = (path) => !path ? null : /^https?:\/\//i.test(path)
@@ -47,7 +48,7 @@ export default function Authors() {
           {authors.map((author) => <article key={author.id} className="group flex min-h-87.5 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl">
             <div className="flex items-center gap-4">
               {imageUrl(author.profile_picture) ? <img src={imageUrl(author.profile_picture)} alt="" className="h-20 w-20 rounded-2xl object-cover shadow-md ring-4 ring-blue-50" /> : <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-4 ring-blue-50"><UserRound size={34} aria-hidden="true" /></div>}
-              <div className="min-w-0"><h2 className="truncate text-xl font-black text-slate-950">{author.name}</h2><p className="truncate text-sm text-slate-500">@{author.slug}</p></div>
+              <div className="min-w-0"><div className="flex min-w-0 items-center gap-1.5"><h2 className="truncate text-xl font-black text-slate-950">{author.name}</h2><TrustedAuthorBadge isTrusted={author.is_trusted} /></div><p className="truncate text-sm text-slate-500">@{author.slug}</p></div>
             </div>
             <p className="mt-6 min-h-12 text-sm font-semibold leading-6 text-blue-700">{author.expertise || "Writer and storyteller"}</p>
             <div className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5 text-slate-600"><Users size={18} className="text-blue-600" aria-hidden="true" /><span className="text-sm font-semibold">{Number(author.followers_count || 0).toLocaleString()} followers</span></div>

@@ -7,6 +7,7 @@ import { API_BASE_URL } from "../config/api";
 import { articlePath } from "../utils/articlePath";
 import AuthorFollow from "../components/AuthorFollow";
 import AuthorShare from "../components/AuthorShare";
+import TrustedAuthorBadge from "../components/TrustedAuthorBadge";
 
 const imageUrl = (path) => !path ? null : /^https?:\/\//i.test(path)
   ? path : `${API_BASE_URL}/storage/${String(path).replace(/^\/?(?:storage\/)?/, "")}`;
@@ -58,7 +59,10 @@ export default function AuthorProfile() {
               {imageUrl(author.profile_picture) ? <img src={imageUrl(author.profile_picture)} alt="" className="h-28 w-28 shrink-0 rounded-3xl object-cover shadow-lg sm:h-36 sm:w-36" /> : <span className="flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl bg-indigo-100 text-indigo-700 sm:h-36 sm:w-36"><UserRound size={56} aria-hidden="true" /></span>}
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600">Author profile</p>
-                <h1 id="author-name" className="mt-2 break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{author.name}</h1>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <h1 id="author-name" className="break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{author.name}</h1>
+                  <TrustedAuthorBadge isTrusted={author.is_trusted} size={24} />
+                </div>
                 {author.expertise && <div className="mt-3">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Expertise</p>
                   <p className="mt-1 text-sm font-semibold leading-6 text-indigo-700">{author.expertise}</p>

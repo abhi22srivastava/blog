@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route  } from "react-router-dom";
 import Home from './pages/Home';
 import About from './pages/About';
 import Articles from './pages/Articles';
+import TopicArticles from './pages/TopicArticles';
+import Topics from './pages/Topics';
 import Contact from './pages/Contact';
 import blogs from './data/blogs';
 import BlogDetails from './pages/BlogDetails';
@@ -27,7 +29,6 @@ import "aos/dist/aos.css";
 
 function App() {
   const [count, setCount] = useState(0)
-  const isLoggedIn = localStorage.getItem("token");
   useEffect(() => {
     AOS.init({
       duration: 1000,   // Animation duration (ms)
@@ -49,6 +50,8 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/blog" element={<Articles />} />
+        <Route path="/topics" element={<Topics />} />
+        <Route path="/topics/:topicSlug" element={<TopicArticles />} />
         <Route path="/authors" element={<Authors />} />
         <Route path="/authors/:slug" element={<AuthorProfile />} />
        
@@ -87,29 +90,17 @@ function App() {
 
       <Route
           path="/:topicSlug/:slug"
-          element={
-            <ProtectedRoute token={isLoggedIn}>
-              <BlogDetails />
-            </ProtectedRoute>
-          }
+          element={<BlogDetails />}
         />
 
       <Route
           path="/blog/:topicSlug/:slug"
-          element={
-            <ProtectedRoute token={isLoggedIn}>
-              <BlogDetails />
-            </ProtectedRoute>
-          }
+          element={<BlogDetails />}
         />
 
       <Route
           path="/blog/:slug"
-          element={
-            <ProtectedRoute token={isLoggedIn}>
-              <BlogDetails  />
-            </ProtectedRoute>
-          }
+          element={<BlogDetails />}
         />
 
         <Route

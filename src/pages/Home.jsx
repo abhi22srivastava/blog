@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import TrustedAuthorBadge from "../components/TrustedAuthorBadge";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { API_BASE_URL } from "../config/api";
@@ -379,12 +380,16 @@ function Home() {
               📂 Popular Topics
             </h2>
 
+            <Link to="/topics" className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 transition hover:text-blue-900">
+              Explore all topics <ArrowUpRight size={15} aria-hidden="true" />
+            </Link>
+
             <div className="space-y-4">
 
               {popularTopics.length > 0 ? popularTopics.map((topic) => (
                 <Link
                   key={topic.slug}
-                  to="/blog"
+                  to={`/topics/${encodeURIComponent(topic.slug)}`}
                 >
                  <div className="flex justify-between items-center border rounded-xl px-5 py-4 mb-2 hover:bg-blue-50 hover:shadow-md transition-all duration-300">
 
@@ -442,12 +447,13 @@ function Home() {
             className="mx-auto h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg ring-2 ring-blue-100"
           /> : <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-blue-50 text-3xl font-black text-blue-700 shadow-lg ring-2 ring-blue-100">{author.name?.charAt(0)?.toUpperCase()}</div>}
 
-          <h3 className="mt-5 text-xl font-black tracking-tight text-slate-950">
+          <h3 className="mt-5 flex flex-wrap items-center justify-center gap-1.5 text-xl font-black tracking-tight text-slate-950">
             {author.name}
+            <TrustedAuthorBadge isTrusted={author.is_trusted} />
           </h3>
 
           <p className="mt-2 min-h-10 text-sm font-semibold leading-5 text-blue-700">{author.expertise || "Writer and storyteller"}</p>
-          <div className="mx-auto mt-2 flex w-full max-w-[180px] items-center justify-center gap-2.5 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-sm shadow-blue-100">
+          <div className="mx-auto mt-2 mb-4 flex w-full max-w-[180px] items-center justify-center gap-2.5 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-sm shadow-blue-100">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <BookOpen size={15} aria-hidden="true" />
             </div>

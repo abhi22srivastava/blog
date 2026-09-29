@@ -3,6 +3,7 @@ import { ArrowUpRight, CalendarDays, Tag, UserRound } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import TrustedAuthorBadge from "../components/TrustedAuthorBadge";
 import { API_BASE_URL } from "../config/api";
 import { articlePath } from "../utils/articlePath";
 
@@ -86,7 +87,7 @@ export default function Articles() {
               <h2 className="mt-5 line-clamp-2 text-2xl font-bold leading-tight tracking-tight text-slate-700">{article.title}</h2>
               {summary && <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{summary}</p>}
               <div className="mt-auto flex flex-col gap-5 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500"><UserRound size={18} aria-hidden="true" /></span><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Written by</p><p className="truncate text-sm font-bold text-slate-800">{author.name || article.author_name || "BlogSphere Author"}</p></div></div>
+                <div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500"><UserRound size={18} aria-hidden="true" /></span><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Written by</p><p className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-slate-800"><span className="truncate">{author.name || article.author_name || "BlogSphere Author"}</span><TrustedAuthorBadge isTrusted={author.is_trusted || article.is_trusted} size={17} /></p></div></div>
                 <Link to={articlePath(article)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-800">Read More <ArrowUpRight size={16} aria-hidden="true" /></Link>
               </div>
             </article>;
