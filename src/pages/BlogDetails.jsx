@@ -480,27 +480,25 @@ function BlogDetails() {
       <>
         <Header />
 
-        <main className="flex min-h-[65vh] items-center justify-center bg-slate-50 px-4">
-          <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-xl shadow-slate-200/50">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">
-              <Tag size={28} />
+        <main className="relative isolate flex min-h-[75vh] items-center justify-center overflow-hidden bg-slate-950 px-4 py-16">
+          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/70 via-slate-950 to-slate-950" />
+          <div className="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-center shadow-2xl shadow-black/30 backdrop-blur sm:p-12">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-300/20 bg-rose-400/10 text-rose-300">
+              <Tag size={27} aria-hidden="true" />
             </div>
-
-            <h1 className="mt-6 text-2xl font-bold text-slate-900">
-              Article unavailable
-            </h1>
-
-            <p className="mt-3 leading-7 text-slate-600">
-              {error || "This article could not be found."}
+            <p className="mt-7 text-sm font-bold uppercase tracking-[0.28em] text-indigo-300">404 · Article not found</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">This story isn’t here</h1>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-slate-300">
+              {error || "The article may have been removed, moved, or the link may be incorrect."}
             </p>
-
-            <Link
-              to="/blog"
-              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
-            >
-              <ArrowLeft size={18} />
-              Back to articles
-            </Link>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link to="/articles" className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-5 py-3 font-bold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-400">
+                <ArrowLeft size={18} aria-hidden="true" /> Browse all articles
+              </Link>
+              <Link to="/" className="inline-flex items-center justify-center rounded-xl border border-white/15 px-5 py-3 font-semibold text-slate-200 transition hover:bg-white/10">
+                Return home
+              </Link>
+            </div>
           </div>
         </main>
 

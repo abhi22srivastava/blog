@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { BrowserRouter, Routes, Route  } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Home from './pages/Home';
 import About from './pages/About';
@@ -49,7 +49,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/articles" element={<Articles />} />
-        <Route path="/blog" element={<Articles />} />
+        <Route path="/blog" element={<Navigate to="/articles" replace />} />
         <Route path="/topics" element={<Topics />} />
         <Route path="/topics/:topicSlug" element={<TopicArticles />} />
         <Route path="/authors" element={<Authors />} />

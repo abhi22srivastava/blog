@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   BadgeCheck,
   UserMinus,
+  Eye,
 } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
 import { calculateProfileCompletion } from "../utils/profileCompletion";
@@ -108,7 +109,10 @@ function Dashboard() {
       ? values.reduce((total, value) => total + Number(value), 0)
       : null;
   };
-  const totalReaders = sumMetric(["views_count", "views"]);
+  const totalArticleViews = articles.reduce((total, article) => {
+    const views = Number(article.views_count ?? article.views ?? 0);
+    return total + (Number.isFinite(views) ? views : 0);
+  }, 0);
   const totalReadTime = sumMetric(["view_time_minutes", "reading_time", "read_time"]);
   const totalFollowers = user?.followers_count ?? user?.total_followers ?? null;
   const formatCount = (value) => value == null ? "—" : Number(value).toLocaleString();
@@ -117,7 +121,7 @@ function Dashboard() {
     { label: "Published Posts", value: formatCount(published), icon: CircleCheck, colors: "from-emerald-50 to-teal-100 border-emerald-200 text-emerald-950", iconColors: "bg-emerald-600 text-white" },
     { label: "Pending Posts", value: formatCount(pending), icon: Hourglass, colors: "from-amber-50 to-orange-100 border-amber-200 text-amber-950", iconColors: "bg-amber-600 text-white" },
     { label: "Total Read Time", value: totalReadTime == null ? "—" : `${formatCount(totalReadTime)} min`, icon: Clock3, colors: "from-rose-50 to-pink-100 border-rose-200 text-rose-950", iconColors: "bg-rose-600 text-white" },
-    { label: "Total Users Reading", value: formatCount(totalReaders), icon: Users, colors: "from-cyan-50 to-sky-100 border-cyan-200 text-cyan-950", iconColors: "bg-cyan-600 text-white" },
+    { label: "Total Article Views", value: formatCount(totalArticleViews), icon: Eye, colors: "from-cyan-50 to-sky-100 border-cyan-200 text-cyan-950", iconColors: "bg-cyan-600 text-white" },
     { label: "Total Followers", value: formatCount(totalFollowers), icon: Users, colors: "from-red-50 to-red-100 border-red-200 text-red-950", iconColors: "bg-red-500 text-white", shadow: "shadow-lg shadow-red-200/40" },
   ];
 

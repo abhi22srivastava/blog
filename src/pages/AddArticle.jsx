@@ -14,6 +14,7 @@ function AddArticle() {
   const navigate = useNavigate();
   const isEditing = Boolean(articleId);
   const quillRef = useRef(null);
+  const contentRef = useRef("");
   const [topicList, setTopicList] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [title, setTitle] = useState("");
@@ -26,6 +27,7 @@ function AddArticle() {
   const [formMessage, setFormMessage] = useState("");
   const [isLoadingArticle, setIsLoadingArticle] = useState(isEditing);
   const [isCreatingTopic, setIsCreatingTopic] = useState(false);
+  const [isTrustedAuthor, setIsTrustedAuthor] = useState(false);
 
 
 const handleTopicChange = (option) => {
@@ -72,30 +74,9 @@ const handleCreateTopic = async (name) => {
 
 
 const handleEditorChange = (value) => {
-    const quill = quillRef.current?.getEditor();
-
-    if (!quill) {
-        setContent(value);
-        return;
-    }
-
-    const selection = quill.getSelection();
-    const scrollTop = quill.root.scrollTop;
-
-    setContent(value);
-
-    // Restore editor position after React re-render
-    requestAnimationFrame(() => {
-        const editor = quillRef.current?.getEditor();
-
-        if (!editor) return;
-
-        if (selection) {
-            editor.setSelection(selection.index, selection.length, "silent");
-        }
-
-        editor.root.scrollTop = scrollTop;
-    });
+    // Keep keystrokes out of React state: rerendering the controlled editor on
+    // every input can reset its internal scroll position while the document grows.
+    contentRef.current = value;
 };
 
 
@@ -103,7 +84,10 @@ const handleEditorChange = (value) => {
  const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (!title.trim() || !content.trim()) {
+  const editorContent = quillRef.current?.getEditor().root.innerHTML ?? contentRef.current ?? content;
+  contentRef.current = editorContent;
+
+  if (!title.trim() || !editorContent.trim()) {
     setFormMessage("Please add an article title and content.");
     return;
   }
@@ -112,7 +96,7 @@ const handleEditorChange = (value) => {
   setFormMessage("");
 
   try {
-    const contentForDatabase = convertImagesForDatabase(content);
+    const contentForDatabase = convertImagesForDatabase(editorContent);
     const response = await fetch(
       isEditing
         ? `${API_URL}/api/article/updatearticle/${articleId}`
@@ -155,6 +139,7 @@ const handleEditorChange = (value) => {
     setTitle("");
     setSlug("");
     setContent("");
+    contentRef.current = "";
     setStatus("0");
     
   } catch (error) {
@@ -194,6 +179,7 @@ const handleReset = () => {
   setTitle("");
   setSlug("");
   setContent("");
+  contentRef.current = "";
   setStatus("0");
   setFormMessage("");
 };
@@ -318,7 +304,7 @@ const imageHandler = () => {
             quill.setSelection(
                 insertionIndex + 1, 0, "silent"
             );
-            setContent(quill.root.innerHTML);
+            contentRef.current = quill.root.innerHTML;
 
         } catch (error) {
             console.error(error);
@@ -424,13 +410,11 @@ const modules = {
             setTitle(article.title || "");
             setSlug(article.slug || "");
 
-            setContent(
-                convertImagesForEditor(
-                    article.content ||
-                    article.long_description ||
-                    ""
-                )
+            const articleContent = convertImagesForEditor(
+                article.content || article.long_description || ""
             );
+            contentRef.current = articleContent;
+            setContent(articleContent);
 
             setStatus(String(article.status ?? "0"));
 
@@ -487,6 +471,21 @@ const modules = {
   useEffect(() => {
     fetchTopics();
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    fetch(`${API_URL}/api/user/profile`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to load author status.");
+        if (!cancelled) setIsTrustedAuthor(Boolean(data.profile?.is_trusted));
+      })
+      .catch((error) => console.error("Author trust status error:", error));
+    return () => { cancelled = true; };
+  }, [API_URL, token]);
 
   return (
     <>
@@ -600,11 +599,13 @@ const modules = {
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3"
             >
               <option value="0">Draft</option>
-              <option value="1">Published</option>
+              <option value="1" disabled={!isTrustedAuthor}>Published{!isTrustedAuthor ? " (trusted authors only)" : ""}</option>
               <option value="2">Deactivated</option>
             </select>
             <p className="mt-2 text-sm text-slate-500">
-              Published articles are visible to readers. Draft and deactivated articles are hidden.
+              {isTrustedAuthor
+                ? "As a trusted author, you can publish articles directly."
+                : "Articles are submitted as drafts for review. An administrator can grant trusted status to enable direct publishing."}
             </p>
           </div>
 
@@ -614,7 +615,11 @@ const modules = {
              <span className="font-semibold">Content</span>
              <button type="button" disabled={isUploading || isLoadingArticle} aria-pressed={showSource}
                onClick={() => {
-                 if (!showSource) setContent(quillRef.current?.getEditor().root.innerHTML ?? content);
+                 if (!showSource) {
+                   const html = quillRef.current?.getEditor().root.innerHTML ?? contentRef.current ?? content;
+                   contentRef.current = html;
+                   setContent(html);
+                 }
                  setShowSource(!showSource);
                }}
                className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50">

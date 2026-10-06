@@ -105,8 +105,6 @@ background:linear-gradient(to right,#1e3a8a,#0f172a);
 }
 
 .quill-wrapper .ql-toolbar {
-    position: sticky;
-    top: 0;
     z-index: 10;
     background: white;
 }
